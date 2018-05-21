@@ -20,6 +20,7 @@ LT_INIT([dlopen])
 
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen])
+AC_CHECK_LIB([mosquitto], [mosquitto_lib_version])
 
 # Checks for header files.
 AC_HEADER_STDC
