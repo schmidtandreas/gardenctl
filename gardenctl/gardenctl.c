@@ -16,6 +16,7 @@
 
 #include "arguments.h"
 #include "garden_module.h"
+#include "mqtt.h"
 
 LIST_HEAD(dl_modules, dl_module) dl_modules_head;
 struct dl_modules *headp;
@@ -82,6 +83,7 @@ static int run(struct arguments *args)
 	int ret = EXIT_SUCCESS;
 	DIR *d = opendir(args->moddir);
 	struct dirent *dir = NULL;
+	struct dl_module *dlm;
 
 	log_dbg("modules directory: %s", args->moddir);
 
@@ -107,13 +109,12 @@ static int run(struct arguments *args)
 		}
 	}
 
-	/*
 	for(dlm = dl_modules_head.lh_first; dlm != NULL; dlm = dlm->dl_modules.le_next) {
-		//TODO: init dlm
+		if (dlm->module->init)
+			dlm->module->init();
 	}
-	*/
 
-	/*TODO: run mqtt handler */
+	ret = mqtt_run(args->mqtt_user, args->mqtt_pass);
 
 out_remove_dl_modules:
 	while(dl_modules_head.lh_first != NULL) {
@@ -174,18 +175,30 @@ static void usage(const char *app_name)
 	"Control garden features\n"
 	"\n"
 	"Options:\n"
-	"  -h, --help            display this help and exit\n"
-	"  -v, --version         display version and exit\n"
-	"      --loglevel LEVEL  max. logging level\n"
-	"                        (default is (%d)\n"
-	"  -p, --pidfile FILE    specify path for pid file\n"
-	"  -m, --mod-path PATH   specify path for modules\n"
+	"  -h, --help                display this help and exit\n"
+	"  -v, --version             display version and exit\n"
+	"      --loglevel LEVEL      max. logging level\n"
+	"                            (default is (%d)\n"
+	"  -p, --pidfile FILE        specify path for pid file\n"
+	"  -m, --mod-path PATH       specify path for modules\n"
+	"  -u, --mqtt_user USER      mqtt username\n"
+	"  -s, --mqtt_pass PASS      mqtt password\n"
+	"  -f, --mqtt_passfile FILE  mqtt password file\n"
 	, app_name, max_loglevel);
 }
 
 static void pr_version(void)
 {
 	fprintf(stdout, "gardenctl (%s) %s\n", PACKAGE, VERSION);
+}
+
+static int get_mqtt_pass(const char *filename, const char **pass)
+{
+	int ret = 0;
+
+	//TODO: use gpg to decrypt password from file
+
+	return ret;
 }
 
 static int cmdline_handler(int argc, char *argv[])
@@ -202,10 +215,13 @@ static int cmdline_handler(int argc, char *argv[])
 		{"version", no_argument, NULL, 'v'},
 		{"loglevel", required_argument, NULL, 0},
 		{"mod-path", required_argument, NULL, 'm'},
+		{"mqtt_user", required_argument, NULL, 'u'},
+		{"mqtt_pass", required_argument, NULL, 's'},
+		{"mqtt_passfile", required_argument, NULL, 'f'},
 		{NULL, 0, NULL, 0},
 	};
 
-	static const char *short_options = "hvpm";
+	static const char *short_options = "hvp:m:u:s:f:";
 
 	while(0 <= (c = getopt_long(argc, argv, short_options, long_options, &long_optind))) {
 		switch (c) {
@@ -227,6 +243,15 @@ static int cmdline_handler(int argc, char *argv[])
 			break;
 		case 'm':
 			args.moddir = optarg;
+			break;
+		case 'u':
+			args.mqtt_user = optarg;
+			break;
+		case 's':
+			args.mqtt_pass = optarg;
+			break;
+		case 'f':
+			args.mqtt_passfile = optarg;
 			break;
 		case '?':
 			break;
@@ -252,6 +277,15 @@ static int cmdline_handler(int argc, char *argv[])
 	if (ret < 0) {
 		log_err("daemonizing failed (%d) %s", errno, strerror(errno));
 		exit(EXIT_FAILURE);
+	}
+
+	if (args.mqtt_passfile) {
+		ret = get_mqtt_pass(args.mqtt_passfile, &args.mqtt_pass);
+		if (ret < 0) {
+			log_err("couldn't get mqtt password from %s (%d) %s",
+					args.mqtt_passfile, ret, strerror(ret));
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	log_info("initialization done");
