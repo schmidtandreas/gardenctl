@@ -12,6 +12,9 @@ static void mqtt_on_log(struct mosquitto *mosq, void *obj, int level, const char
 
 static void mqtt_on_connect(struct mosquitto *mosq, void *obj, int result)
 {
+	struct mqtt *mqtt = (struct mqtt*)obj;
+	int err = 0;
+
 	if (result)
 	{
 		log_err("MQTT connection failed (%d) %s", result, mosquitto_strerror(result));
@@ -20,7 +23,11 @@ static void mqtt_on_connect(struct mosquitto *mosq, void *obj, int result)
 
 	log_dbg("MQTT client connected");
 
-	mosquitto_subscribe(mosq, NULL, "/garden/test", 2);
+	err = dlm_mod_subscribe(mqtt->dlm_head);
+	if (err) {
+		log_err("subscribtion failed (%d) %s", err, strerror(err));
+		mosquitto_disconnect(mosq);
+	}
 }
 
 static void mqtt_on_subscribe(struct mosquitto *mosq, void *obj, int mid,
@@ -37,10 +44,18 @@ static void mqtt_on_subscribe(struct mosquitto *mosq, void *obj, int mid,
 static void mqtt_on_message(struct mosquitto *mosq, void *obj, 
 			    const struct mosquitto_message *message)
 {
+	struct mqtt *mqtt = (struct mqtt*)obj;
+	int err = 0;
+
 	log_dbg("MQTT [%s] message received:\n %s", message->topic, message->payload);
+
+	err = dlm_mod_message(mqtt->dlm_head, message);
+	if (err) {
+		log_err("handle message failed");
+	}
 }
 
-int mqtt_run(const char *username, const char *password)
+int mqtt_run(dlm_head_t *dlm_head, const char *username, const char *password)
 {
 	int ret = 0;
 	struct mqtt mqtt;
@@ -59,6 +74,14 @@ int mqtt_run(const char *username, const char *password)
 	}
 
 	log_dbg("MQTT client created");
+
+	mqtt.dlm_head = dlm_head;
+
+	ret = dlm_mod_init(dlm_head, mqtt.mosq);
+	if (ret < 0) {
+		log_err("initiate modules failed (%d) %s", ret, strerror(ret));
+		goto out_destroy;
+	}
 
 	//TODO: set last will if neseccary
 

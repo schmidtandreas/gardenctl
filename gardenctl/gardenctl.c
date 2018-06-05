@@ -10,21 +10,11 @@
 #include <config.h>
 #include <dirent.h>
 #include <regex.h>
-#include <sys/queue.h>
-#include <dlfcn.h>
 #include <linux/limits.h>
 
 #include "arguments.h"
-#include "garden_module.h"
+#include "dl_module.h"
 #include "mqtt.h"
-
-LIST_HEAD(dl_modules, dl_module) dl_modules_head;
-struct dl_modules *headp;
-struct dl_module {
-	void *dl_handler;
-	struct garden_module *module;
-	LIST_ENTRY(dl_module) dl_modules;
-};
 
 static int match_regex(const char *pattern, const char *string) {
 	int ret = 0;
@@ -43,47 +33,12 @@ static int match_regex(const char *pattern, const char *string) {
 	return 1;
 }
 
-static int create_dl_module(const char *filename)
-{
-	int ret = 0;
-	struct dl_module *module = malloc(sizeof(*module));
-	const char* dl_err = NULL;
-
-	if (module) {
-		memset(module, 0, sizeof(*module));
-		dlerror();
-		module->dl_handler = dlopen(filename, RTLD_NOW);
-
-		if ((dl_err = dlerror()) == NULL) {
-			struct garden_module* (*get_garden_module)(void);
-			get_garden_module = dlsym(module->dl_handler, "get_garden_module");
-
-			if ((dl_err = dlerror()) == NULL) {
-				module->module = get_garden_module();
-				LIST_INSERT_HEAD(&dl_modules_head, module, dl_modules);
-			} else {
-				ret = 1;
-				dlclose(module->dl_handler);
-				free(module);
-			}
-		} else {
-			log_err("dlopen for %s failed %s", filename, dl_err);
-			ret = -EINVAL;
-		}
-	} else {
-		log_err("Allocate memory for module failed.");
-		ret = -ENOMEM;
-	}
-
-	return ret;
-}
-
 static int run(struct arguments *args)
 {
 	int ret = EXIT_SUCCESS;
 	DIR *d = opendir(args->moddir);
 	struct dirent *dir = NULL;
-	struct dl_module *dlm;
+	dlm_head_t dlm_head;
 
 	log_dbg("modules directory: %s", args->moddir);
 
@@ -93,7 +48,7 @@ static int run(struct arguments *args)
 		goto out;
 	}
 
-	LIST_INIT(&dl_modules_head);
+	LIST_INIT(&dlm_head);
 
 	while ((dir = readdir(d)) != NULL) {
 		if (dir->d_type == DT_REG) {
@@ -102,26 +57,17 @@ static int run(struct arguments *args)
 			if (match_regex("libgarden_.*\\.so$", dir->d_name)) {
 				char path[PATH_MAX];
 				sprintf(path, "%s%s", args->moddir, dir->d_name);
-				ret = create_dl_module(path);
+				ret = dlm_create(&dlm_head, path);
 				if (ret < 0)
 					goto out_remove_dl_modules;
 			}
 		}
 	}
 
-	for(dlm = dl_modules_head.lh_first; dlm != NULL; dlm = dlm->dl_modules.le_next) {
-		if (dlm->module->init)
-			dlm->module->init();
-	}
-
-	ret = mqtt_run(args->mqtt_user, args->mqtt_pass);
+	ret = mqtt_run(&dlm_head, args->mqtt_user, args->mqtt_pass);
 
 out_remove_dl_modules:
-	while(dl_modules_head.lh_first != NULL) {
-		dlclose(dl_modules_head.lh_first->dl_handler);
-		LIST_REMOVE(dl_modules_head.lh_first, dl_modules);
-	}
-
+	dlm_destroy(&dlm_head);
 	closedir(d);
 out:
 	return ret;
