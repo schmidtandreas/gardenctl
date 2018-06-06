@@ -68,6 +68,7 @@ AC_CONFIG_FILES([
 	common/Makefile
 	modules/Makefile
 	modules/watering/Makefile
+	modules/light/Makefile
 	gardenctl/Makefile
 ])
 AC_OUTPUT

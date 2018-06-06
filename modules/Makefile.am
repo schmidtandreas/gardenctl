@@ -1,1 +1,1 @@
-SUBDIRS=watering
+SUBDIRS=watering light
