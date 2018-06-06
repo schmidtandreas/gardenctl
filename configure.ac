@@ -19,13 +19,14 @@ AM_PROG_AR
 LT_INIT([dlopen])
 
 # Checks for libraries.
-AC_CHECK_LIB([dl], [dlopen])
-AC_CHECK_LIB([mosquitto], [mosquitto_lib_version])
+AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR([libdl not found])])
+AC_CHECK_LIB([mosquitto], [mosquitto_lib_version], [], [AC_MSG_ERROR([libmosquitto not found])])
+AC_CHECK_LIB([pthread], [pthread_mutex_init], [], [AC_MSG_ERROR([libpthread not found])])
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h signal.h stdarg.h dirent.h regex.h sys/queue.h \
-		  dlfcn.h pthread.h linux/i2c-dev.h])
+		  dlfcn.h mosquitto.h pthread.h linux/i2c-dev.h], [], [AC_MSG_ERROR([Header file not found])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
