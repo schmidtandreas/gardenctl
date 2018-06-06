@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <regex.h>
 #include <linux/limits.h>
+#include <gpioex.h>
 
 #include "arguments.h"
 #include "dl_module.h"
@@ -237,6 +238,10 @@ static int cmdline_handler(int argc, char *argv[])
 	log_info("initialization done");
 	create_pidfile(args.pidfile);
 	log_dbg("app name: %s PID: %d", args.app_name, getpid());
+
+	ret = gpioex_init();
+	if (ret)
+		exit(EXIT_FAILURE);
 
 	ret = run(&args);
 

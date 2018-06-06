@@ -25,7 +25,7 @@ AC_CHECK_LIB([mosquitto], [mosquitto_lib_version])
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h signal.h stdarg.h dirent.h regex.h sys/queue.h \
-		  dlfcn.h])
+		  dlfcn.h pthread.h linux/i2c-dev.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -40,11 +40,11 @@ AC_CHECK_SIZEOF(long long, 8)
 
 # Checks for library functions.
 AC_TYPE_SIGNAL
-AC_FUNC_STRNLEN
 AC_CHECK_FUNCS([ \
-		daemon strerror fprintf vfprintf getpid \
+		daemon strerror fprintf vfprintf strnlen getpid \
 		opendir readdir closedir regcomp \
-		dlerror dlclose dlsym \
+		dlerror dlclose dlsym pthread_mutex_init \
+		pthread_mutex_lock pthread_mutex_unlock \
 ])
 
 # Additional arguments

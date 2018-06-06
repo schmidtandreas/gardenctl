@@ -3,16 +3,15 @@
 #include <string.h>
 #include <errno.h>
 #include <garden_module.h>
+#include <garden_common.h>
 #include <logging.h>
+#include <gpioex.h>
 
 enum topics {
 	TOPIC_TAP,
-	TOPIC_YARD_LEFT,
-	TOPIC_YARD_RIGHT,
-	TOPIC_YARD_MIDDLE,
-	TOPIC_YARD_FRONT,
-	TOPIC_YARD_BACK,
-	TOPIC_YARD_FRONT_BACK,
+	TOPIC_WATER,
+	TOPIC_DROPPIPE_PUMP,
+	TOPIC_BARREL,
 	MAX_TOPICS,
 };
 
@@ -37,12 +36,9 @@ static int gm_init(struct garden_module *gm, struct mosquitto* mosq)
 	data = (struct watering*)gm->data;
 
 	data->topics[TOPIC_TAP] = "/garden/tap";
-	data->topics[TOPIC_YARD_LEFT] = "/garden/yard_left";
-	data->topics[TOPIC_YARD_RIGHT] = "/garden/yard_right";
-	data->topics[TOPIC_YARD_MIDDLE] = "/garden/yard_middle";
-	data->topics[TOPIC_YARD_FRONT] = "/garden/yard_front";
-	data->topics[TOPIC_YARD_BACK] = "/garden/yard_back";
-	data->topics[TOPIC_YARD_FRONT_BACK] = "/garden/yard_front_back";
+	data->topics[TOPIC_WATER] = "/garden/water";
+	data->topics[TOPIC_DROPPIPE_PUMP] = "/garden/droppipepump";
+	data->topics[TOPIC_BARREL] = "/garden/barrel";
 out:
 	return ret;
 }
@@ -63,16 +59,83 @@ static int gm_subscribe(struct garden_module *gm)
 			}
 		}
 	}
+
+	return ret;
+}
+
+static int water_payload_to_gpioex(const char *payload, size_t len, uint32_t *gpio, int *val)
+{
+	int ret = 0;
+
+	if (!len) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (strcmp("left", payload) == 0) {
+		*gpio = GPIOEX_YARD_LEFT;
+		*val = 1;
+	} else if (strcmp("right", payload) == 0) {
+		*gpio = GPIOEX_YARD_RIGHT;
+		*val = 1;
+	} else if (strcmp("middle", payload) == 0) {
+		*gpio = GPIOEX_YARD_LEFT | GPIOEX_YARD_RIGHT;
+		*val = 1;
+	} else if (strcmp("front", payload) == 0) {
+		*gpio = GPIOEX_YARD_FRONT;
+		*val = 1;
+	} else if (strcmp("back", payload) == 0) {
+		*gpio = GPIOEX_YARD_BACK;
+		*val = 1;
+	} else if (strcmp("front_back", payload) == 0) {
+		*gpio = GPIOEX_YARD_FRONT | GPIOEX_YARD_BACK;
+		*val = 1;
+	} else if (strcmp("off", payload) == 0) {
+		*gpio = GPIOEX_YARD_LEFT | GPIOEX_YARD_RIGHT;
+		*gpio |= GPIOEX_YARD_FRONT | GPIOEX_YARD_BACK;
+		*val = 0;
+	}
+out:
 	return ret;
 }
 
 static int gm_message(struct garden_module *gm, const struct mosquitto_message *message)
 {
 	int ret = 0;
+	struct watering *data;
 
-	log_dbg("handle message - topic: %s", message->topic);
-	log_dbg("message content: %s", message->payload);
+	log_dbg("watering: handle message - topic: %s", message->topic);
+	log_dbg("watering: message content: %s", message->payload);
 
+	data = gm->data;
+
+	if (!data) {
+		ret = -EINVAL;
+	}
+
+	if (strcmp(data->topics[TOPIC_TAP], message->topic) == 0) {
+		ret = payload_on_off_to_int(message->payload, message->payloadlen);
+		if (ret < 0)
+			goto out;
+		ret = gpioex_set(GPIOEX_TAP, ret);
+	} else if (strcmp(data->topics[TOPIC_WATER], message->topic) == 0) {
+		int gpio, val;
+		ret = water_payload_to_gpioex(message->payload, message->payloadlen, &gpio, &val);
+		if (ret < 0)
+			goto out;
+		ret = gpioex_set(gpio, val);
+	} else if (strcmp(data->topics[TOPIC_DROPPIPE_PUMP], message->topic) == 0) {
+		ret = payload_on_off_to_int(message->payload, message->payloadlen);
+		if (ret < 0)
+			goto out;
+		ret = gpioex_set(GPIOEX_DROPPIPE_PUMP, ret);
+	} else if (strcmp(data->topics[TOPIC_BARREL], message->topic) == 0) {
+		ret = payload_on_off_to_int(message->payload, message->payloadlen);
+		if (ret < 0)
+			goto out;
+		ret = gpioex_set(GPIOEX_BARREL, ret);
+	}
+out:
 	return ret;
 }
 
