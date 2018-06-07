@@ -26,7 +26,8 @@ AC_CHECK_LIB([pthread], [pthread_mutex_init], [], [AC_MSG_ERROR([libpthread not 
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h signal.h stdarg.h dirent.h regex.h sys/queue.h \
-		  dlfcn.h mosquitto.h pthread.h linux/i2c-dev.h], [], [AC_MSG_ERROR([Header file not found])])
+		  dlfcn.h mosquitto.h pthread.h linux/i2c-dev.h sys/ioctl.h \
+		  linux/limits.h], [], [AC_MSG_ERROR([Header file not found])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -43,8 +44,8 @@ AC_CHECK_SIZEOF(long long, 8)
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([ \
 		daemon strerror fprintf vfprintf strnlen getpid \
-		opendir readdir closedir regcomp \
-		dlerror dlclose dlsym pthread_mutex_init \
+		opendir readdir closedir regcomp open close read \
+		write ioctl dlerror dlclose dlsym pthread_mutex_init \
 		pthread_mutex_lock pthread_mutex_unlock \
 ])
 

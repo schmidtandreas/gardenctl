@@ -13,6 +13,8 @@
 #define GPIOEX_LIGHT_TREE	0x00000080
 #define GPIOEX_LIGHT_HOUSE	0x00000100
 
+#define GPIOEX_YARD 	(GPIOEX_YARD_LEFT | GPIOEX_YARD_RIGHT | GPIOEX_YARD_FRONT | GPIOEX_YARD_BACK)
+
 int gpioex_init(void);
 int gpioex_set(uint32_t gpio, int value);
 

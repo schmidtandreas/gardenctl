@@ -39,6 +39,8 @@ static int gm_init(struct garden_module *gm, struct mosquitto* mosq)
 	data->topics[TOPIC_WATER] = "/garden/water";
 	data->topics[TOPIC_DROPPIPE_PUMP] = "/garden/droppipepump";
 	data->topics[TOPIC_BARREL] = "/garden/barrel";
+
+	/*TODO: start thread for read barrel level and publish it */
 out:
 	return ret;
 }
@@ -111,6 +113,7 @@ static int gm_message(struct garden_module *gm, const struct mosquitto_message *
 
 	if (!data) {
 		ret = -EINVAL;
+		goto out;
 	}
 
 	if (strcmp(data->topics[TOPIC_TAP], message->topic) == 0) {
