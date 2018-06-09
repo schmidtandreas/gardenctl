@@ -17,5 +17,6 @@
 
 int gpioex_init(void);
 int gpioex_set(uint32_t gpio, int value);
+int gpioex_get_barrel_level(void);
 
 #endif /*__GPIOEX_H__*/

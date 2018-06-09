@@ -88,7 +88,7 @@ out:
 	return ret;
 }
 
-struct garden_module *create_garden_module(void)
+struct garden_module *create_garden_module(enum loglevel loglevel)
 {
 	struct garden_module *module = malloc(sizeof(*module));
 
@@ -97,6 +97,8 @@ struct garden_module *create_garden_module(void)
 		module->init = gm_init;
 		module->subscribe = gm_subscribe;
 		module->message = gm_message;
+
+		max_loglevel = loglevel;
 	}
 
 	return module;

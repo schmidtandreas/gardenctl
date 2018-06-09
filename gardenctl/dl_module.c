@@ -19,7 +19,7 @@ int dlm_create(dlm_head_t *head, const char *filename)
 		dlm->dl_handler = dlopen(filename, RTLD_NOW);
 
 		if ((dl_err = dlerror()) == NULL) {
-			struct garden_module* (*create_garden_module)(void);
+			struct garden_module* (*create_garden_module)(enum loglevel);
 
 			create_garden_module = dlsym(dlm->dl_handler, "create_garden_module");
 			if ((dl_err = dlerror()) != NULL) {
@@ -37,7 +37,7 @@ int dlm_create(dlm_head_t *head, const char *filename)
 				goto err_dlclose;
 			}
 			
-			dlm->garden = create_garden_module();
+			dlm->garden = create_garden_module(max_loglevel);
 			if (!dlm->garden) {
 				log_err("creation of garden module for %s failed", filename);
 				ret = -ENOMEM;

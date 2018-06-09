@@ -1,11 +1,16 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <config.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
+#include <pthread.h>
 #include <garden_module.h>
 #include <garden_common.h>
 #include <logging.h>
 #include <gpioex.h>
+
+#define GET_BARREL_LVL_INTERVAL_SEC 5
 
 enum topics {
 	TOPIC_TAP,
@@ -15,9 +20,77 @@ enum topics {
 	MAX_TOPICS,
 };
 
+enum thread_state {
+	THREAD_STATE_STOPPED,
+	THREAD_STATE_RUNNING,
+};
+
 struct watering {
 	const char *topics[MAX_TOPICS];
+	pthread_t thread;
+	pthread_mutex_t lock;
+	enum thread_state thread_state;
 };
+
+static void* gm_thread_run(void *obj)
+{
+	struct garden_module *gm = (struct garden_module*) obj;
+	struct watering *data = (struct watering*) gm->data;
+	enum thread_state state;
+	int barrel_level = -1;
+
+	state = data->thread_state = THREAD_STATE_RUNNING;
+
+	while (state == THREAD_STATE_RUNNING) {
+		int curr_barrel_level = gpioex_get_barrel_level();
+
+		log_dbg("read barrel level: %d", curr_barrel_level);
+
+		if (curr_barrel_level >= 0 && curr_barrel_level != barrel_level) {
+			int ret = 0;
+			int i = 0;
+			char buf[20] = {0};
+			double barrel_level_percent = 0;
+
+			barrel_level = curr_barrel_level;
+
+			for (i = 0; i < 8; ++i) {
+				if (!(curr_barrel_level & 0x1))
+					barrel_level_percent += 12.5;
+				curr_barrel_level >>= 1;
+			}
+
+			sprintf(buf, "%.1f%", barrel_level_percent);
+
+			ret = mosquitto_publish(gm->mosq, NULL, "/garden/sensor/barrel",
+						strlen(buf), buf, 2, false);
+			if (ret < 0) {
+				log_err("publish barrel level failed (%d) %s", ret,
+					mosquitto_strerror(ret));
+			}
+		}
+
+		sleep(GET_BARREL_LVL_INTERVAL_SEC);
+		pthread_mutex_lock(&data->lock);
+		state = data->thread_state;
+		pthread_mutex_unlock(&data->lock);
+	}
+
+	return NULL;
+}
+
+static void gm_thread_stop(struct watering* data)
+{
+	int ret = 0;
+
+	if (data) {
+		pthread_mutex_lock(&data->lock);
+		data->thread_state = THREAD_STATE_STOPPED;
+		pthread_mutex_unlock(&data->lock);
+
+		pthread_join(data->thread, NULL);
+	}
+}
 
 static int gm_init(struct garden_module *gm, struct mosquitto* mosq)
 {
@@ -40,7 +113,17 @@ static int gm_init(struct garden_module *gm, struct mosquitto* mosq)
 	data->topics[TOPIC_DROPPIPE_PUMP] = "/garden/droppipepump";
 	data->topics[TOPIC_BARREL] = "/garden/barrel";
 
-	/*TODO: start thread for read barrel level and publish it */
+	ret = pthread_mutex_init(&data->lock, NULL);
+	if (ret) {
+		log_err("initiate watering lock failed (%d) %s", ret, strerror(ret));
+		goto out;
+	}
+
+	ret = pthread_create(&data->thread, NULL, &gm_thread_run, gm);
+	if (ret) {
+		log_err("create watering thread failed (%d) %s", ret, strerror(ret));
+		goto out;
+	}
 out:
 	return ret;
 }
@@ -142,7 +225,7 @@ out:
 	return ret;
 }
 
-struct garden_module *create_garden_module(void)
+struct garden_module *create_garden_module(enum loglevel loglevel)
 {
 	struct garden_module *module = malloc(sizeof(*module));
 
@@ -151,6 +234,8 @@ struct garden_module *create_garden_module(void)
 		module->init = gm_init;
 		module->subscribe = gm_subscribe;
 		module->message = gm_message;
+
+		max_loglevel = loglevel;
 	}
 
 	return module;
@@ -159,6 +244,7 @@ struct garden_module *create_garden_module(void)
 void destroy_garden_module(struct garden_module *module)
 {
 	if (module) {
+		gm_thread_stop(module->data);
 		if (module->data)
 			free(module->data);
 		free(module);

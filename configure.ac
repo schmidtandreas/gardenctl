@@ -43,10 +43,11 @@ AC_CHECK_SIZEOF(long long, 8)
 # Checks for library functions.
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([ \
-		daemon strerror fprintf vfprintf strnlen getpid \
+		daemon strerror fprintf vfprintf sprintf strnlen getpid \
 		opendir readdir closedir regcomp open close read \
 		write ioctl dlerror dlclose dlsym pthread_mutex_init \
-		pthread_mutex_lock pthread_mutex_unlock \
+		pthread_mutex_lock pthread_mutex_unlock pthread_create \
+		pthread_join mosquitto_publish mosquitto_subscribe \
 ])
 
 # Additional arguments

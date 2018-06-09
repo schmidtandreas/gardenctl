@@ -230,7 +230,7 @@ int gpioex_set(uint32_t gpio, int value)
 	int set_valves = 0;
 	uint8_t valves_value;
 
-	log_dbg("gpioex set: gpio: %08X val: %d", gpio, val);
+	log_dbg("gpioex set: gpio: %08X val: %d", gpio, value);
 
 	pthread_mutex_lock(&lock);
 
@@ -287,5 +287,21 @@ int gpioex_set(uint32_t gpio, int value)
 
 out:
 	pthread_mutex_unlock(&lock);
+	return ret;
+}
+
+int gpioex_get_barrel_level(void)
+{
+	int ret = 0;
+	uint8_t lvl;
+
+	pthread_mutex_lock(&lock);
+
+	ret = gpioex_get_gpio(GPIOEX_BUS_1, GPIOEX_ADDR_BARREL_LVL, &lvl);
+	if (!ret)
+		ret = lvl;
+
+	pthread_mutex_unlock(&lock);
+
 	return ret;
 }
