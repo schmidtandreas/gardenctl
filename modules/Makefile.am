@@ -1,1 +1,1 @@
-SUBDIRS=watering light
+SUBDIRS=watering light weather_station

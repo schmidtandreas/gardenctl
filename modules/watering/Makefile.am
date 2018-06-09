@@ -9,4 +9,4 @@ libgarden_watering_la_LIBADD = $(top_builddir)/common/libgarden_common.la
 libgarden_watering_la_CFLAGS = -I$(top_srcdir)/include \
 	-I$(top_srcdir)/common/include
 
-libgarden_watering_la_LDFLAGS = -no-undefined -avoid-version -shared -module
+libgarden_watering_la_LDFLAGS = -pthread -no-undefined -avoid-version -shared -module
