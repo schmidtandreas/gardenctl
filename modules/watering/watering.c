@@ -11,6 +11,7 @@
 #include <gpioex.h>
 
 #define GET_BARREL_LVL_INTERVAL_SEC 5
+#define PUBLISH_INT 10
 
 enum topics {
 	TOPIC_TAP,
@@ -38,6 +39,7 @@ static void* gm_thread_run(void *obj)
 	struct watering *data = (struct watering*) gm->data;
 	enum thread_state state;
 	int barrel_level = -1;
+	uint32_t period = 0;
 
 	state = data->thread_state = THREAD_STATE_RUNNING;
 
@@ -46,7 +48,8 @@ static void* gm_thread_run(void *obj)
 
 		log_dbg("read barrel level: %d", curr_barrel_level);
 
-		if (curr_barrel_level >= 0 && curr_barrel_level != barrel_level) {
+		if (curr_barrel_level >= 0 && 
+		    (curr_barrel_level != barrel_level || !(period % PUBLISH_INT))) {
 			int ret = 0;
 			int i = 0;
 			char buf[20] = {0};
@@ -74,6 +77,8 @@ static void* gm_thread_run(void *obj)
 		pthread_mutex_lock(&data->lock);
 		state = data->thread_state;
 		pthread_mutex_unlock(&data->lock);
+
+		++period;
 	}
 
 	return NULL;

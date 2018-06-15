@@ -12,6 +12,7 @@
 #include <gpioex.h>
 
 #define INTERVAL_SEC 30
+#define PUBLISH_INT 10
 
 #define DHT_TEMP_FILENAME "/sys/bus/iio/devices/iio:device0/in_temp_input"
 #define DHT_HUMREL_FILENAME "/sys/bus/iio/devices/iio:device0/in_humidityrelative_input"
@@ -88,6 +89,7 @@ static void* gm_thread_run(void *obj)
 	enum thread_state state;
 	double dht_temp = 0;
 	double dht_hum = 0;
+	uint32_t period = 0;
 
 	state = data->thread_state = THREAD_STATE_RUNNING;
 
@@ -96,7 +98,7 @@ static void* gm_thread_run(void *obj)
 		double curr_dht_temp, curr_dht_hum;
 
 		ret = get_dht_temp(&curr_dht_temp);
-		if (ret >= 0 && dht_temp != curr_dht_temp) {
+		if (ret >= 0 && (dht_temp != curr_dht_temp || !(period % PUBLISH_INT))) {
 			char buf[10] = {0};
 			dht_temp = curr_dht_temp;
 
@@ -111,7 +113,7 @@ static void* gm_thread_run(void *obj)
 		}
 
 		ret = get_dht_hum(&curr_dht_hum);
-		if (ret >= 0 && dht_hum != curr_dht_hum) {
+		if (ret >= 0 && (dht_hum != curr_dht_hum || !(period % PUBLISH_INT))) {
 			char buf[10] = {0};
 			dht_hum = curr_dht_hum;
 
@@ -129,6 +131,8 @@ static void* gm_thread_run(void *obj)
 		pthread_mutex_lock(&data->lock);
 		state = data->thread_state;
 		pthread_mutex_unlock(&data->lock);
+
+		++period;
 	}
 
 	return NULL;
