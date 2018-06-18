@@ -5,6 +5,8 @@
 
 #include "logging.h"
 
+static struct mqtt mqtt;
+
 static void mqtt_on_log(struct mosquitto *mosq, void *obj, int level, const char *str)
 {
 	log_dbg("MQTT: %s", str);
@@ -20,6 +22,8 @@ static void mqtt_on_connect(struct mosquitto *mosq, void *obj, int result)
 		log_err("MQTT connection failed (%d) %s", result, mosquitto_strerror(result));
 		return;
 	}
+
+	mqtt->state = MQTT_STATE_CONNECTED;
 
 	log_dbg("MQTT client connected");
 
@@ -58,7 +62,6 @@ static void mqtt_on_message(struct mosquitto *mosq, void *obj,
 int mqtt_run(dlm_head_t *dlm_head, const char *username, const char *password)
 {
 	int ret = 0;
-	struct mqtt mqtt;
 
 	memset(&mqtt, 0, sizeof(struct mqtt));
 
@@ -108,7 +111,11 @@ int mqtt_run(dlm_head_t *dlm_head, const char *username, const char *password)
 	}
 
 	mosquitto_loop_forever(mqtt.mosq, -1, 1);
+
+	mqtt.state = MQTT_STATE_DISCONNECTED;
+
 	log_dbg("MQTT client disconnected");
+
 out_destroy:
 	mosquitto_destroy(mqtt.mosq);
 	log_dbg("MQTT client destroied");
@@ -116,4 +123,10 @@ out_cleanup:
 	mosquitto_lib_cleanup();
 out:
 	return ret;
+}
+
+void mqtt_quit(void)
+{
+	if (mqtt.state == MQTT_STATE_CONNECTED)
+		mosquitto_disconnect(mqtt.mosq);
 }

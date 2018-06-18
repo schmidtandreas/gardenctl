@@ -135,6 +135,8 @@ static void* gm_thread_run(void *obj)
 		++period;
 	}
 
+	log_dbg("exit weather station thread");
+
 	return NULL;
 }
 
@@ -143,11 +145,13 @@ static void gm_thread_stop(struct weather_station* data)
 	int ret = 0;
 
 	if (data) {
+		log_dbg("stopping weather station thread");
 		pthread_mutex_lock(&data->lock);
 		data->thread_state = THREAD_STATE_STOPPED;
 		pthread_mutex_unlock(&data->lock);
 
 		pthread_join(data->thread, NULL);
+		log_dbg("stopped weather station thread");
 	}
 }
 

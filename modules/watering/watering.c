@@ -81,6 +81,8 @@ static void* gm_thread_run(void *obj)
 		++period;
 	}
 
+	log_dbg("exit watering thread");
+
 	return NULL;
 }
 
@@ -89,11 +91,13 @@ static void gm_thread_stop(struct watering* data)
 	int ret = 0;
 
 	if (data) {
+		log_dbg("stopping watering thread");
 		pthread_mutex_lock(&data->lock);
 		data->thread_state = THREAD_STATE_STOPPED;
 		pthread_mutex_unlock(&data->lock);
 
 		pthread_join(data->thread, NULL);
+		log_dbg("watering thread stopped");
 	}
 }
 

@@ -252,6 +252,8 @@ static void sig_handler(int signo)
 {
 	switch(signo) {
 	case SIGTERM:
+		mqtt_quit();
+		log_dbg("Exit gardenctl");
 		break;
 	}
 }
