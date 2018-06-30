@@ -37,7 +37,7 @@ static pthread_mutex_t lock;
 
 /* 12V relays */
 #define GPIOEX_BIT_DROPPIPE_PUMP	0x80
-
+#define GPIOEX_BIT_LIGHT_TAP		0x20
 
 static int gpioex_set_gpio(uint8_t bus, uint8_t addr, uint8_t value)
 {
@@ -285,6 +285,8 @@ int gpioex_set(uint32_t gpio, int value)
 	if (gpio & GPIOEX_LIGHT_HOUSE)
 		GPIOEX_SET_BIT(GPIOEX_ADDR_230V, LIGHT_HOUSE, value, ret, out);
 
+	if (gpio & GPIOEX_LIGHT_TAP)
+		GPIOEX_SET_BIT(GPIOEX_ADDR_12V, LIGHT_TAP, value, ret, out);
 out:
 	pthread_mutex_unlock(&lock);
 	return ret;

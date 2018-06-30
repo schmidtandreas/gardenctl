@@ -10,6 +10,7 @@
 enum topics {
 	TOPIC_LIGHT_TREE,
 	TOPIC_LIGHT_HOUSE,
+	TOPIC_LIGHT_TAP,
 	MAX_TOPICS,
 };
 
@@ -35,6 +36,7 @@ static int gm_init(struct garden_module *gm, struct mosquitto* mosq)
 
 	data->topics[TOPIC_LIGHT_TREE] = "/garden/light/tree";
 	data->topics[TOPIC_LIGHT_HOUSE] = "/garden/light/house";
+	data->topics[TOPIC_LIGHT_TAP] = "/garden/light/tap";
 out:
 	return ret;
 }
@@ -58,6 +60,13 @@ static int gm_subscribe(struct garden_module *gm)
 	return ret;
 }
 
+#define IF_TOPIC_SET_GPIOEX(__topic, __gpioex, __out, __ret) \
+if (strcmp(data->topics[TOPIC_LIGHT_##__topic], message->topic) == 0) { \
+	__ret = payload_on_off_to_int(message->payload, message->payloadlen); \
+	if (__ret < 0) goto __out; \
+	__ret = gpioex_set(GPIOEX_LIGHT_##__gpioex, __ret); \
+}
+
 static int gm_message(struct garden_module *gm, const struct mosquitto_message *message)
 {
 	int ret = 0;
@@ -73,17 +82,10 @@ static int gm_message(struct garden_module *gm, const struct mosquitto_message *
 		goto out;
 	}
 
-	if (strcmp(data->topics[TOPIC_LIGHT_TREE], message->topic) == 0) {
-		ret = payload_on_off_to_int(message->payload, message->payloadlen);
-		if (ret < 0)
-			goto out;
-		ret = gpioex_set(GPIOEX_LIGHT_TREE, ret);
-	} else if (strcmp(data->topics[TOPIC_LIGHT_HOUSE], message->topic) == 0) {
-		ret = payload_on_off_to_int(message->payload, message->payloadlen);
-		if (ret < 0)
-			goto out;
-		ret = gpioex_set(GPIOEX_LIGHT_HOUSE, ret);
-	}
+	IF_TOPIC_SET_GPIOEX(TREE, TREE, out, ret);
+	IF_TOPIC_SET_GPIOEX(HOUSE, HOUSE, out, ret);
+	IF_TOPIC_SET_GPIOEX(TAP, TAP, out, ret);
+
 out:
 	return ret;
 }
