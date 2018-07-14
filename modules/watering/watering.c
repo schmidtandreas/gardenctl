@@ -16,7 +16,7 @@
 
 #define GET_BARREL_LVL_INTERVAL_SEC 5
 #define PUBLISH_INT 10
-#define POLL_TAP_BTN_TIMEOUT 30000
+#define POLL_TAP_BTN_TIMEOUT 10000
 
 #define GPIO_TAP_BTN 26
 
@@ -144,17 +144,20 @@ static int gm_debounce_gpio(int fd, char *value)
 
 static void gm_get_tap_value(struct watering *data, char gpio_val, char *tap_val, size_t size)
 {
-	if (gpio_val == '0') {
-		if (data->tap_btn_released)
-			data->tap_state = !data->tap_state;
-		data->tap_btn_released = 0;
-	} else if (gpio_val == '1')
-		data->tap_btn_released = 1;
+	bool is_state_changed = false;
 
-	if (data->tap_state)
-		snprintf(tap_val, size, "on");
-	else
-		snprintf(tap_val, size, "off");
+	if (gpio_val == '0') {
+		if (data->tap_btn_released) {
+			is_state_changed = true;
+		}
+		data->tap_btn_released = 0;
+	} else if (gpio_val == '1') {
+		data->tap_btn_released = 1;
+	}
+
+	if (is_state_changed) {
+		snprintf(tap_val, size, "pushed");
+	}
 
 	log_dbg("tap state: %s (gpio: %c)", tap_val, gpio_val);
 }
@@ -190,10 +193,10 @@ static void* gm_thread_tap_btn_run(void *obj)
 	while (state == THREAD_STATE_RUNNING) {
 		lseek(fd, 0, SEEK_SET);
 		ret = poll(&pfd, 1, POLL_TAP_BTN_TIMEOUT);
-		if (ret >= 0) {
+		if (ret > 0) {
 			char gpio_val;
 			if (gm_debounce_gpio(fd, &gpio_val) >= 0) {
-				char tap_val[4] = {0};
+				char tap_val[10] = {0};
 				gm_get_tap_value(data, gpio_val, tap_val, sizeof(tap_val));
 
 				if (*tap_val)
@@ -204,7 +207,7 @@ static void* gm_thread_tap_btn_run(void *obj)
 						mosquitto_strerror(ret));
 				}
 			}
-		} else
+		} else if (ret)
 			log_err("poll for gpio value failed (%d) %s", ret, strerror(ret));
 
 		state = gm_get_thread_state(data, &data->thread_tap_btn_state);
