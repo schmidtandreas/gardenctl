@@ -50,21 +50,11 @@ AC_CHECK_FUNCS([ \
 		pthread_join mosquitto_publish mosquitto_subscribe \
 ])
 
-# Additional arguments
-AC_ARG_WITH([pid],
-	AS_HELP_STRING([--with-pid=FILE], [path to location for PID file @<:@default=/var/run/gardenctl.pid@:>@]),
-	[with_pid=${withval}],
-	[with_pid=/var/run/gardenctl.pid])
-if (test -n "${with_pid}" ); then
-	AC_DEFINE_UNQUOTED([PIDFILE], ["${with_pid}"], ["path to location for PID file"])
-fi
+m4_include(m4/gardenctl.m4)
 
-AC_ARG_ENABLE([moddir],
-	AS_HELP_STRING([--enable-moddir=DIR], [path to location of gardenctl modules @<:@default=$libdir/gardenctl@:>@]),
-	[MODULESDIR=${enableval}],
-	[MODULESDIR=$libdir/gardenctl])
-
-AC_SUBST(MODULESDIR)
+AC_WITH_SYSTEMD()
+AC_WITH_PID()
+AC_WITH_MODDIR()
 
 AC_CONFIG_FILES([
 	Makefile

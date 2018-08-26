@@ -15,7 +15,6 @@ autom4te.cache
 *.dirstamp
 config.*
 configure
-m4
 libtool
 gardenctl/gardenctl
 build-aux/ar-lib
@@ -26,3 +25,5 @@ build-aux/ltmain.sh
 build-aux/missing
 build
 cscope*
+m4/lt*
+m4/libtool.m4
