@@ -111,6 +111,7 @@ out:
 static void args_set_default(int argc, char *argv[], struct arguments *args)
 {
 	args->app_name = argv[0];
+	args->daemonize = true;
 	args->pidfile = NULL;
 	args->moddir = NULL;
 }
@@ -126,6 +127,7 @@ static void usage(const char *app_name)
 	"  -v, --version             display version and exit\n"
 	"      --loglevel LEVEL      max. logging level\n"
 	"                            (default is (%d)\n"
+	"  -d, --no-daemonize        do not daemonize\n"
 	"  -p, --pidfile FILE        specify path for pid file\n"
 	"  -m, --mod-path PATH       specify path for modules\n"
 	"  -u, --mqtt_user USER      mqtt username\n"
@@ -161,6 +163,7 @@ static int cmdline_handler(int argc, char *argv[])
 		{"help", no_argument, NULL, 'h'},
 		{"version", no_argument, NULL, 'v'},
 		{"loglevel", required_argument, NULL, 0},
+		{"no-daemonize", no_argument, NULL, 'd'},
 		{"mod-path", required_argument, NULL, 'm'},
 		{"mqtt_user", required_argument, NULL, 'u'},
 		{"mqtt_pass", required_argument, NULL, 's'},
@@ -168,7 +171,7 @@ static int cmdline_handler(int argc, char *argv[])
 		{NULL, 0, NULL, 0},
 	};
 
-	static const char *short_options = "hvp:m:u:s:f:";
+	static const char *short_options = "hvdp:m:u:s:f:";
 
 	while(0 <= (c = getopt_long(argc, argv, short_options, long_options, &long_optind))) {
 		switch (c) {
@@ -185,6 +188,9 @@ static int cmdline_handler(int argc, char *argv[])
 		case 'v':
 			pr_version();
 			exit(EXIT_SUCCESS);
+		case 'd':
+			args.daemonize = false;
+			break;
 		case 'p':
 			args.pidfile = optarg;
 			break;
@@ -220,11 +226,15 @@ static int cmdline_handler(int argc, char *argv[])
 	if (!args.moddir)
 		args.moddir = DEFAULT_MODULE_PATH;
 
-	ret = daemon(0, 1);
-	if (ret < 0) {
-		log_err("daemonizing failed (%d) %s", errno, strerror(errno));
-		exit(EXIT_FAILURE);
+	if (args.daemonize) {
+		ret = daemon(0, 1);
+		if (ret < 0) {
+			log_err("daemonizing failed (%d) %s", errno, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
 	}
+
+	create_pidfile(args.pidfile);
 
 	if (args.mqtt_passfile) {
 		ret = get_mqtt_pass(args.mqtt_passfile, &args.mqtt_pass);
@@ -236,7 +246,6 @@ static int cmdline_handler(int argc, char *argv[])
 	}
 
 	log_info("initialization done");
-	create_pidfile(args.pidfile);
 	log_dbg("app name: %s PID: %d", args.app_name, getpid());
 
 	ret = gpioex_init();
