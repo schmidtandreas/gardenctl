@@ -22,12 +22,13 @@ LT_INIT([dlopen])
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR([libdl not found])])
 AC_CHECK_LIB([mosquitto], [mosquitto_lib_version], [], [AC_MSG_ERROR([libmosquitto not found])])
 AC_CHECK_LIB([pthread], [pthread_mutex_init], [], [AC_MSG_ERROR([libpthread not found])])
+AC_CHECK_LIB([confuse], [cfg_init], [], [AC_MSG_ERROR([libconfuse not found])])
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h signal.h stdarg.h dirent.h regex.h sys/queue.h \
 		  dlfcn.h mosquitto.h pthread.h linux/i2c-dev.h sys/ioctl.h \
-		  linux/limits.h], [], [AC_MSG_ERROR([Header file not found])])
+		  linux/limits.h confuse.h], [], [AC_MSG_ERROR([Header file not found])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -47,7 +48,10 @@ AC_CHECK_FUNCS([ \
 		getpid opendir readdir closedir regcomp open close read \
 		write ioctl dlerror dlclose dlsym pthread_mutex_init \
 		pthread_mutex_lock pthread_mutex_unlock pthread_create \
-		pthread_join mosquitto_publish mosquitto_subscribe \
+		pthread_join access mosquitto_publish mosquitto_subscribe \
+		cfg_init cfg_parse cfg_free cfg_set_validate_func cfg_getint \
+		cfg_opt_getnint cfg_getnsec cfg_getstr cfg_error cfg_parse \
+		cfg_size cfg_opt_getnstr strdup \
 ])
 
 m4_include(m4/gardenctl.m4)
@@ -55,6 +59,7 @@ m4_include(m4/gardenctl.m4)
 AC_WITH_SYSTEMD()
 AC_WITH_PID()
 AC_WITH_MODDIR()
+AC_WITH_CONFPATH()
 
 AC_CONFIG_FILES([
 	Makefile

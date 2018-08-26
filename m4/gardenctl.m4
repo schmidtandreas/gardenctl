@@ -26,4 +26,13 @@ AC_DEFUN([AC_WITH_MODDIR], [
 	AC_SUBST(MODULESDIR)
 ])
 
+AC_DEFUN([AC_WITH_CONFPATH], [
+	AC_ARG_WITH([conf],
+		AS_HELP_STRING([--with-conf=FILE], [path to location of gardenctl configuration file @<:@default=/etc/default/gardenctl@:>@]),
+		[CONFPATH=${withval}],
+		[CONFPATH=/etc/default/gardenctl])
+
+	AC_SUBST(CONFPATH)
+])
+
 

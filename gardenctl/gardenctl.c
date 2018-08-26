@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <regex.h>
 #include <linux/limits.h>
+#include <confuse.h>
 #include <gpioex.h>
 
 #include "arguments.h"
@@ -65,7 +66,7 @@ static int run(struct arguments *args)
 		}
 	}
 
-	ret = mqtt_run(&dlm_head, args->mqtt_user, args->mqtt_pass);
+	ret = mqtt_run(&dlm_head, args);
 
 out_remove_dl_modules:
 	dlm_destroy(&dlm_head);
@@ -110,10 +111,17 @@ out:
 
 static void args_set_default(int argc, char *argv[], struct arguments *args)
 {
+	memset(args, 0, sizeof(struct arguments));
 	args->app_name = argv[0];
 	args->daemonize = true;
-	args->pidfile = NULL;
-	args->moddir = NULL;
+}
+
+static void args_free(struct arguments *args)
+{
+	free((void*)args->mqtt.host);
+	free((void*)args->mqtt.user);
+	free((void*)args->mqtt.pass);
+	free((void*)args->mqtt.passfile);
 }
 
 static void usage(const char *app_name)
@@ -130,15 +138,100 @@ static void usage(const char *app_name)
 	"  -d, --no-daemonize        do not daemonize\n"
 	"  -p, --pidfile FILE        specify path for pid file\n"
 	"  -m, --mod-path PATH       specify path for modules\n"
-	"  -u, --mqtt_user USER      mqtt username\n"
-	"  -s, --mqtt_pass PASS      mqtt password\n"
-	"  -f, --mqtt_passfile FILE  mqtt password file\n"
+	"  -c, --conffile FILE       specify path for configuration file\n"
 	, app_name, max_loglevel);
 }
 
 static void pr_version(void)
 {
 	fprintf(stdout, "gardenctl (%s) %s\n", PACKAGE, VERSION);
+}
+
+static int conf_valid_loglevel(cfg_t *cfg, cfg_opt_t *opt)
+{
+	int ret = 0;
+
+	int loglevel = cfg_opt_getnint(opt, 0);
+	if (loglevel < LOGLEVEL_INFO || loglevel > LOGLEVEL_DEBUG) {
+		cfg_error(cfg, "invalid loglevel %d it has to be between %d and %d\n",
+			  loglevel, LOGLEVEL_INFO, LOGLEVEL_DEBUG);
+		ret = -1;
+	}
+
+	return ret;
+}
+
+static int conf_valid_mqtt_passfile(cfg_t *cfg, cfg_opt_t *opt)
+{
+	int ret = 0;
+	const char *filename = cfg_opt_getnstr(opt, 0);
+
+	if (!filename || access(filename, R_OK) < 0) {
+		cfg_error(cfg, "mqtt password file %s not exists or has no read access\n",
+			  filename);
+		ret = -1;
+	}
+
+	return ret;
+}
+
+static int conf_set_args_from_conf_file(struct arguments *args)
+{
+	int ret = 0;
+	cfg_t *cfg;
+	cfg_t *cfg_mqtt = NULL;
+
+	cfg_opt_t mqtt_opts[] = {
+		CFG_STR("host", "localhost", CFGF_NONE),
+		CFG_INT("port", 1883, CFGF_NONE),
+		CFG_STR("user", "", CFGF_NONE),
+		CFG_STR("password", "", CFGF_NONE),
+		CFG_STR("passfile", "", CFGF_NONE),
+		CFG_END()
+	};
+
+	cfg_opt_t opts[] = {
+		CFG_INT("loglevel", -1, CFGF_NONE),
+		CFG_SEC("mqtt", mqtt_opts, CFGF_NONE),
+		CFG_END()
+	};
+
+	cfg = cfg_init(opts, CFGF_NONE);
+
+	cfg_set_validate_func(cfg, "loglevel", conf_valid_loglevel);
+	cfg_set_validate_func(cfg, "mqtt|passfile", conf_valid_mqtt_passfile);
+
+	switch(cfg_parse(cfg, args->conf_file)) {
+	case CFG_FILE_ERROR:
+		log_warn("Read configuration file %s failed (%d) %s\n" \
+			 "Configuration file will be ignored\n",
+			 args->conf_file, errno, strerror(errno));
+		ret = -ENOENT;
+		goto out;
+	case CFG_PARSE_ERROR:
+		log_err("Parse configuration file %s failed\n", args->conf_file);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (cfg_getint(cfg, "loglevel") > 0)
+		max_loglevel = cfg_getint(cfg, "loglevel");
+
+	if (cfg_size(cfg, "mqtt") >= 0)
+		cfg_mqtt = cfg_getnsec(cfg, "mqtt", 0);
+
+	if (cfg_mqtt) {
+		args->mqtt.host = strdup(cfg_getstr(cfg_mqtt, "host"));
+		args->mqtt.port = (uint16_t)cfg_getint(cfg_mqtt, "port");
+		args->mqtt.user = strdup(cfg_getstr(cfg_mqtt, "user"));
+		args->mqtt.pass = strdup(cfg_getstr(cfg_mqtt, "password"));
+		args->mqtt.passfile = strdup(cfg_getstr(cfg_mqtt, "passfile"));
+	}
+
+out:
+	cfg_free(cfg);
+
+	return ret;
 }
 
 static int get_mqtt_pass(const char *filename, const char **pass)
@@ -165,13 +258,12 @@ static int cmdline_handler(int argc, char *argv[])
 		{"loglevel", required_argument, NULL, 0},
 		{"no-daemonize", no_argument, NULL, 'd'},
 		{"mod-path", required_argument, NULL, 'm'},
-		{"mqtt_user", required_argument, NULL, 'u'},
-		{"mqtt_pass", required_argument, NULL, 's'},
-		{"mqtt_passfile", required_argument, NULL, 'f'},
+		{"pidfile", required_argument, NULL, 'p'},
+		{"conffile", required_argument, NULL, 'c'},
 		{NULL, 0, NULL, 0},
 	};
 
-	static const char *short_options = "hvdp:m:u:s:f:";
+	static const char *short_options = "hvdp:m:f:c:";
 
 	while(0 <= (c = getopt_long(argc, argv, short_options, long_options, &long_optind))) {
 		switch (c) {
@@ -197,14 +289,8 @@ static int cmdline_handler(int argc, char *argv[])
 		case 'm':
 			args.moddir = optarg;
 			break;
-		case 'u':
-			args.mqtt_user = optarg;
-			break;
-		case 's':
-			args.mqtt_pass = optarg;
-			break;
-		case 'f':
-			args.mqtt_passfile = optarg;
+		case 'c':
+			args.conf_file = optarg;
 			break;
 		case '?':
 			break;
@@ -226,6 +312,9 @@ static int cmdline_handler(int argc, char *argv[])
 	if (!args.moddir)
 		args.moddir = DEFAULT_MODULE_PATH;
 
+	if (!args.conf_file)
+		args.conf_file = DEFAULT_CONF_PATH;
+
 	if (args.daemonize) {
 		ret = daemon(0, 1);
 		if (ret < 0) {
@@ -236,11 +325,15 @@ static int cmdline_handler(int argc, char *argv[])
 
 	create_pidfile(args.pidfile);
 
-	if (args.mqtt_passfile) {
-		ret = get_mqtt_pass(args.mqtt_passfile, &args.mqtt_pass);
+	ret = conf_set_args_from_conf_file(&args);
+	if (ret == EINVAL)
+		exit(EXIT_FAILURE);
+
+	if (args.mqtt.passfile) {
+		ret = get_mqtt_pass(args.mqtt.passfile, &args.mqtt.pass);
 		if (ret < 0) {
 			log_err("couldn't get mqtt password from %s (%d) %s",
-					args.mqtt_passfile, ret, strerror(ret));
+					args.mqtt.passfile, ret, strerror(ret));
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -253,6 +346,8 @@ static int cmdline_handler(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 
 	ret = run(&args);
+
+	args_free(&args);
 
 	return ret;
 }

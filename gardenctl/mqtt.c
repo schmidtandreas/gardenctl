@@ -59,7 +59,7 @@ static void mqtt_on_message(struct mosquitto *mosq, void *obj,
 	}
 }
 
-int mqtt_run(dlm_head_t *dlm_head, const char *username, const char *password)
+int mqtt_run(dlm_head_t *dlm_head, struct arguments *args)
 {
 	int ret = 0;
 
@@ -88,14 +88,15 @@ int mqtt_run(dlm_head_t *dlm_head, const char *username, const char *password)
 
 	//TODO: set last will if neseccary
 
-	ret = mosquitto_username_pw_set(mqtt.mosq, username, password);
+	ret = mosquitto_username_pw_set(mqtt.mosq, args->mqtt.user, args->mqtt.pass);
 	if (ret != MOSQ_ERR_SUCCESS) {
 		log_err("set mosquitto username and passowrd failed (%d) %s", ret,
 				strerror(ret));
 		goto out_destroy;
 	}
 
-	log_dbg("MQTT set username: %s pass: %s", username, password);
+	log_dbg("MQTT set host: %s port: %d", args->mqtt.host, args->mqtt.port);
+	log_dbg("MQTT set username: %s pass: %s", args->mqtt.user, args->mqtt.pass);
 
 	mosquitto_log_callback_set(mqtt.mosq, mqtt_on_log);
 	mosquitto_connect_callback_set(mqtt.mosq, mqtt_on_connect);
@@ -104,7 +105,7 @@ int mqtt_run(dlm_head_t *dlm_head, const char *username, const char *password)
 
 	log_dbg("MQTT client iniated");
 
-	ret = mosquitto_connect(mqtt.mosq, "homeserver", 1883, 30);
+	ret = mosquitto_connect(mqtt.mosq, args->mqtt.host, args->mqtt.port, 30);
 	if (ret != MOSQ_ERR_SUCCESS) {
 		log_err("connect to mqtt broker failed (%d) %s", ret, strerror(ret));
 		goto out_destroy;

@@ -5,3 +5,5 @@ libgarden_common_la_SOURCES = logging/logging.c common.c gpioex/gpioex.c
 libgarden_common_la_CFLAGS = -static -I$(top_srcdir)/common/include -fPIC
 
 libgarden_common_la_LDFLAGS = -lpthread
+
+noinst_HEADERS = include/logging.h include/garden_common.h include/gpioex.h

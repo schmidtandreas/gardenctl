@@ -6,7 +6,7 @@ After=sockets.target network-online.target nss-lookup.target
 [Service]
 Type=forking
 PIDFile=/var/run/gardenctl.pid
-ExecStart=/usr/local/bin/gardenctl -d -u "andreas" -s "drachen5Flug" --loglevel 2
+ExecStart=/usr/local/bin/gardenctl
 ExecReload=/bin/kill -TERM $MAINPID
 KillMode=process
 Restart=on-failure
