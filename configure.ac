@@ -64,5 +64,6 @@ AC_CONFIG_FILES([
 	modules/light/Makefile
 	modules/weather_station/Makefile
 	gardenctl/Makefile
+	systemd/gardenctl.service
 ])
 AC_OUTPUT

@@ -11,6 +11,9 @@ EXTRA_DIST = \
 	autogen.sh
 	configure
 
+install-exec-hook:
+	$(INSTALL) -m 644 systemd/gardenctl.service @SYSTEMDSYSTEMUNITDIR@
+
 BUILT_SOURCES = $(top_srcdir)/.version
 $(top_srcdir)/.version:
 	echo $(VERSION) > $@-t && mv $@-t $@

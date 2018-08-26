@@ -1,0 +1,15 @@
+[Unit]
+Description=Garden control MQTT client
+After=sockets.target network.target ssh.service
+
+[Service]
+Type=forking
+PIDFile=/var/run/gardenctl.pid
+#EnvironmentFile=-/etc/default/gardenctrl
+ExecStart=/usr/local/bin/gardenctl -u "andreas" -s "drachen5Flug" --loglevel 2
+ExecReload=/bin/kill -TERM $MAINPID
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
