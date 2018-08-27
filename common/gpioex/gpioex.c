@@ -1,4 +1,4 @@
-/* 
+/*
  * gpioex.c
  * This file is a part of gardenctl
  *
@@ -48,7 +48,7 @@ static pthread_mutex_t lock;
 #define GPIOEX_BIT_YARD_FRONT		0x40
 #define GPIOEX_BIT_YARD_BACK		0x80
 #define GPIOEX_BIT_YARD	(GPIOEX_BIT_YARD_LEFT | GPIOEX_BIT_YARD_RIGHT | \
-				 GPIOEX_BIT_YARD_FRONT | GPIOEX_BIT_YARD_BACK)
+			 GPIOEX_BIT_YARD_FRONT | GPIOEX_BIT_YARD_BACK)
 #define GPIOEX_BIT_PUMP_VALVES	(GPIOEX_BIT_YARD | GPIOEX_BIT_TAP | GPIOEX_BIT_BARREL)
 
 /* 230V relays */
@@ -232,18 +232,18 @@ out:
 }
 
 #define GPIOEX_SET_BIT(__addr, __bit, __val, __ret, __out) do { \
-uint8_t val; \
-__ret = gpioex_get_gpio(GPIOEX_BUS_1, __addr, &val); \
-if (__ret) \
-	goto __out; \
-if (!__val) \
-	val |= GPIOEX_BIT_##__bit; \
-else \
-	val &= ~GPIOEX_BIT_##__bit; \
-__ret = gpioex_set_gpio(GPIOEX_BUS_1, __addr, val); \
-if (__ret) \
-	goto __out; \
-} while(0)
+		uint8_t val; \
+		__ret = gpioex_get_gpio(GPIOEX_BUS_1, __addr, &val); \
+		if (__ret) \
+			goto __out; \
+		if (!__val) \
+			val |= GPIOEX_BIT_ ## __bit; \
+		else \
+			val &= ~GPIOEX_BIT_ ## __bit; \
+		__ret = gpioex_set_gpio(GPIOEX_BUS_1, __addr, val); \
+		if (__ret) \
+			goto __out; \
+} while (0)
 
 int gpioex_set(uint32_t gpio, int value)
 {

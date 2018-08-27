@@ -1,4 +1,4 @@
-/* 
+/*
  * argumets.h
  * This file is a part of gardenctl
  *
@@ -31,13 +31,13 @@ struct arguments {
 	const char *pidfile;
 	const char *moddir;
 	const char *conf_file;
-	struct{
+	struct {
 		const char *host;
 		uint16_t port;
 		const char *user;
 		const char *pass;
 		const char *passfile;
-	}mqtt;
+	} mqtt;
 };
 
 #endif /*__ARGUMENTS_H__*/

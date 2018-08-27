@@ -1,4 +1,4 @@
-/* 
+/*
  * weather_station.c
  * This file is a part of gardenctl
  *
@@ -53,7 +53,8 @@ static int get_dht_temp(double *temp)
 {
 	int ret = 0;
 	int fd;
-	char buffer[20] = {0};
+	char buffer[20] = { 0 };
+
 	*temp = 0.0;
 
 	ret = open(DHT_TEMP_FILENAME, O_RDONLY);
@@ -80,7 +81,8 @@ static int get_dht_hum(double *hum)
 {
 	int ret = 0;
 	int fd;
-	char buffer[20] = {0};
+	char buffer[20] = { 0 };
+
 	*hum = 0.0;
 
 	ret = open(DHT_HUMREL_FILENAME, O_RDONLY);
@@ -105,8 +107,8 @@ out:
 
 static void* gm_thread_run(void *obj)
 {
-	struct garden_module *gm = (struct garden_module*) obj;
-	struct weather_station *data = (struct weather_station*) gm->data;
+	struct garden_module *gm = (struct garden_module*)obj;
+	struct weather_station *data = (struct weather_station*)gm->data;
 	enum thread_state state;
 	double dht_temp = 0;
 	double dht_hum = 0;
@@ -120,33 +122,31 @@ static void* gm_thread_run(void *obj)
 
 		ret = get_dht_temp(&curr_dht_temp);
 		if (ret >= 0 && (dht_temp != curr_dht_temp || !(period % PUBLISH_INT))) {
-			char buf[10] = {0};
+			char buf[10] = { 0 };
 			dht_temp = curr_dht_temp;
 
 			sprintf(buf, "%.1f", dht_temp);
 
 			ret = mosquitto_publish(gm->mosq, NULL, "/garden/sensor/temperature",
 						strlen(buf), buf, 2, false);
-			if (ret < 0) {
+			if (ret < 0)
 				log_err("publish dht temperature failed (%d) %s", ret,
 					mosquitto_strerror(ret));
-			}
 		}
 
 		ret = get_dht_hum(&curr_dht_hum);
 		if (ret >= 0 && (dht_hum != curr_dht_hum || !(period % PUBLISH_INT))) {
-			char buf[10] = {0};
+			char buf[10] = { 0 };
 			dht_hum = curr_dht_hum;
 
 			sprintf(buf, "%.1f", dht_hum);
 
 			ret = mosquitto_publish(gm->mosq, NULL, "/garden/sensor/humidity",
 						strlen(buf), buf, 2, false);
-			if (ret < 0) {
+			if (ret < 0)
 				log_err("publish dht humidity failed (%d) %s", ret,
 					mosquitto_strerror(ret));
-			}
-		}	
+		}
 
 		sleep(INTERVAL_SEC);
 		pthread_mutex_lock(&data->lock);

@@ -1,4 +1,4 @@
-/* 
+/*
  * watering.c
  * This file is a part of gardenctl
  *
@@ -66,14 +66,17 @@ struct watering {
 	int tap_btn_released;
 };
 
-static inline void gm_set_thread_state(struct watering *data, enum thread_state *state, enum thread_state value) {
+static inline void gm_set_thread_state(struct watering *data, enum thread_state *state, enum thread_state value)
+{
 	pthread_mutex_lock(&data->lock);
 	*state = value;
 	pthread_mutex_unlock(&data->lock);
 }
 
-static inline enum thread_state gm_get_thread_state(struct watering *data, enum thread_state *state) {
+static inline enum thread_state gm_get_thread_state(struct watering *data, enum thread_state *state)
+{
 	enum thread_state ret;
+
 	pthread_mutex_lock(&data->lock);
 	ret = *state;
 	pthread_mutex_unlock(&data->lock);
@@ -83,8 +86,8 @@ static inline enum thread_state gm_get_thread_state(struct watering *data, enum 
 
 static void* gm_thread_barrel_run(void *obj)
 {
-	struct garden_module *gm = (struct garden_module*) obj;
-	struct watering *data = (struct watering*) gm->data;
+	struct garden_module *gm = (struct garden_module*)obj;
+	struct watering *data = (struct watering*)gm->data;
 	enum thread_state state;
 	int barrel_level = -1;
 	uint32_t period = 0;
@@ -100,11 +103,11 @@ static void* gm_thread_barrel_run(void *obj)
 
 		log_dbg("read barrel level: %d", curr_barrel_level);
 
-		if (curr_barrel_level >= 0 && 
+		if (curr_barrel_level >= 0 &&
 		    (curr_barrel_level != barrel_level || !(period % PUBLISH_INT))) {
 			int ret = 0;
 			int i = 0;
-			char buf[20] = {0};
+			char buf[20] = { 0 };
 			double barrel_level_percent = 0;
 
 			barrel_level = curr_barrel_level;
@@ -119,10 +122,9 @@ static void* gm_thread_barrel_run(void *obj)
 
 			ret = mosquitto_publish(gm->mosq, NULL, "/garden/sensor/barrel",
 						strlen(buf), buf, 2, false);
-			if (ret < 0) {
+			if (ret < 0)
 				log_err("publish barrel level failed (%d) %s", ret,
 					mosquitto_strerror(ret));
-			}
 		}
 
 		sleep(GET_BARREL_LVL_INTERVAL_SEC);
@@ -144,7 +146,7 @@ static int gm_debounce_gpio(int fd, char *value)
 	lseek(fd, 0, SEEK_SET);
 	ret = read(fd, value, 1);
 
-	while(counter--) {
+	while (counter--) {
 		lseek(fd, 0, SEEK_SET);
 		ret = read(fd, &tmp_val, 1);
 		if (ret > 0) {
@@ -154,7 +156,7 @@ static int gm_debounce_gpio(int fd, char *value)
 			}
 		} else {
 			log_err("read gpio value failed (%d) %s", ret, strerror(ret));
-			ret = (ret) ? :-ENOENT;
+			ret = (ret) ? : -ENOENT;
 		}
 
 		usleep(10000);
@@ -168,27 +170,25 @@ static void gm_get_tap_value(struct watering *data, char gpio_val, char *tap_val
 	bool is_state_changed = false;
 
 	if (gpio_val == '0') {
-		if (data->tap_btn_released) {
+		if (data->tap_btn_released)
 			is_state_changed = true;
-		}
 		data->tap_btn_released = 0;
 	} else if (gpio_val == '1') {
 		data->tap_btn_released = 1;
 	}
 
-	if (is_state_changed) {
+	if (is_state_changed)
 		snprintf(tap_val, size, "pushed");
-	}
 
 	log_dbg("tap state: %s (gpio: %c)", tap_val, gpio_val);
 }
 
 static void* gm_thread_tap_btn_run(void *obj)
 {
-	struct garden_module *gm = (struct garden_module*) obj;
-	struct watering *data = (struct watering*) gm->data;
+	struct garden_module *gm = (struct garden_module*)obj;
+	struct watering *data = (struct watering*)gm->data;
 	enum thread_state state;
-	char gpio_val_path[100] = {0};
+	char gpio_val_path[100] = { 0 };
 	int gpio = GPIO_TAP_BTN;
 	int fd, ret;
 	struct pollfd pfd;
@@ -217,19 +217,19 @@ static void* gm_thread_tap_btn_run(void *obj)
 		if (ret > 0) {
 			char gpio_val;
 			if (gm_debounce_gpio(fd, &gpio_val) >= 0) {
-				char tap_val[10] = {0};
+				char tap_val[10] = { 0 };
 				gm_get_tap_value(data, gpio_val, tap_val, sizeof(tap_val));
 
 				if (*tap_val)
 					ret = mosquitto_publish(gm->mosq, NULL, "/garden/sensor/tap",
 								strlen(tap_val), tap_val, 2, false);
-				if (ret < 0) {
+				if (ret < 0)
 					log_err("publish tap btn value failed (%d) %s", ret,
 						mosquitto_strerror(ret));
-				}
 			}
-		} else if (ret)
+		} else if (ret) {
 			log_err("poll for gpio value failed (%d) %s", ret, strerror(ret));
+		}
 
 		state = gm_get_thread_state(data, &data->thread_tap_btn_state);
 	}
@@ -264,8 +264,8 @@ static int gm_export_gpio(int gpio)
 	int ret = 0;
 	int fd = 0;
 	int len = 0;
-	char buf[20] = {0};
-	char path[100] = {0};
+	char buf[20] = { 0 };
+	char path[100] = { 0 };
 	struct stat st;
 
 	snprintf(path, sizeof(path), "/sys/class/gpio/gpio%d", gpio);
@@ -292,10 +292,11 @@ static int gm_export_gpio(int gpio)
 			log_err("write to gpio export failed (%d) %s", ret, strerror(ret));
 
 		close(fd);
-	} else if (ret)
+	} else if (ret) {
 		log_err("check link %s failed (%d) %s", path, errno, strerror(errno));
-	else
+	} else{
 		log_dbg("gpio %s aleady exported", path);
+	}
 out:
 	return (ret < 0) ? : 0;
 
@@ -305,7 +306,7 @@ static int gm_set_gpio_direction(int gpio, const char *direction)
 {
 	int ret = 0;
 	int fd = 0;
-	char path[100] = {0};
+	char path[100] = { 0 };
 
 	snprintf(path, sizeof(path), "/sys/class/gpio/gpio%d/direction", gpio);
 
@@ -320,7 +321,7 @@ static int gm_set_gpio_direction(int gpio, const char *direction)
 	ret = write(fd, direction, strlen(direction));
 	if (ret < 0)
 		log_err("write to gpio direction failed (%d) %s", ret, strerror(ret));
-	
+
 	close(fd);
 
 	log_dbg("set gpio direction \"%s\" to %s", direction, path);
@@ -332,7 +333,7 @@ static int gm_set_gpio_edge(int gpio, const char *edge)
 {
 	int ret = 0;
 	int fd = 0;
-	char path[100] = {0};
+	char path[100] = { 0 };
 
 	snprintf(path, sizeof(path), "/sys/class/gpio/gpio%d/edge", gpio);
 
@@ -347,7 +348,7 @@ static int gm_set_gpio_edge(int gpio, const char *edge)
 	ret = write(fd, edge, strlen(edge));
 	if (ret < 0)
 		log_err("write to gpio edge failed (%d) %s", ret, strerror(ret));
-	
+
 	close(fd);
 
 	log_dbg("set gpio edge \"%s\" to %s", edge, path);
@@ -358,6 +359,7 @@ out:
 static int gm_init_tap_btn(struct watering *data)
 {
 	int ret = 0;
+
 	ret = gm_export_gpio(GPIO_TAP_BTN);
 	if (ret)
 		goto out;

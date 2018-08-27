@@ -1,4 +1,4 @@
-/* 
+/*
  * logging.c
  * This file is a part of gardenctl
  *
@@ -35,7 +35,7 @@ static int log_prefix(FILE *logfile, enum loglevel level)
 	int ret = 0;
 	const char *prefix = NULL;
 
-	switch(level) {
+	switch (level) {
 	case LOGLEVEL_INFO:
 		prefix = "-I- ";
 		break;

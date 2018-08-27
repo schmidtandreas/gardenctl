@@ -1,4 +1,4 @@
-/* 
+/*
  * dl_module.h
  * This file is a part of gardenctl
  *
@@ -32,7 +32,7 @@ typedef struct dl_module {
 	LIST_ENTRY(dl_module) dl_modules;
 } dlm_t;
 
-typedef LIST_HEAD(dl_module_s, dl_module) dlm_head_t;
+typedef LIST_HEAD (dl_module_s, dl_module) dlm_head_t;
 
 int dlm_create(dlm_head_t *head, const char *filename);
 void dlm_destroy(dlm_head_t *head);

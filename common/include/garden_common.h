@@ -1,4 +1,4 @@
-/* 
+/*
  * garden_common.h
  * This file is a part of gardenctl
  *

@@ -1,4 +1,4 @@
-/* 
+/*
  * gardenctl.c
  * This file is a part of gardenctl
  *
@@ -39,7 +39,8 @@
 #include "dl_module.h"
 #include "mqtt.h"
 
-static int match_regex(const char *pattern, const char *string) {
+static int match_regex(const char *pattern, const char *string)
+{
 	int ret = 0;
 	regex_t re;
 
@@ -47,7 +48,7 @@ static int match_regex(const char *pattern, const char *string) {
 	if (ret < 0)
 		return 0;
 
-	ret = regexec(&re, string, (size_t) 0, NULL, 0);
+	ret = regexec(&re, string, (size_t)0, NULL, 0);
 	regfree(&re);
 
 	if (ret != 0)
@@ -112,11 +113,11 @@ static int create_pidfile(const char *pidfilename)
 		ret = fprintf(pidfile, "%d\n", (int)getpid());
 		if (ret < 0)
 			log_err("write pid to %s failed (%d) %s", pidfilename, errno,
-					strerror(errno));
+				strerror(errno));
 
 		if (fclose(pidfile)) {
 			log_err("close pidfile %s failed (%d) %s",
-					pidfilename, errno, strerror(errno));
+				pidfilename, errno, strerror(errno));
 			ret = -errno;
 			goto out;
 		}
@@ -148,19 +149,19 @@ static void args_free(struct arguments *args)
 static void usage(const char *app_name)
 {
 	fprintf(stdout,
-	"Usage: %s [OPTIONS]\n"
-	"Control garden features\n"
-	"\n"
-	"Options:\n"
-	"  -h, --help                display this help and exit\n"
-	"  -v, --version             display version and exit\n"
-	"      --loglevel LEVEL      max. logging level\n"
-	"                            (default is (%d)\n"
-	"  -d, --no-daemonize        do not daemonize\n"
-	"  -p, --pidfile FILE        specify path for pid file\n"
-	"  -m, --mod-path PATH       specify path for modules\n"
-	"  -c, --conffile FILE       specify path for configuration file\n"
-	, app_name, max_loglevel);
+		"Usage: %s [OPTIONS]\n"
+		"Control garden features\n"
+		"\n"
+		"Options:\n"
+		"  -h, --help                display this help and exit\n"
+		"  -v, --version             display version and exit\n"
+		"      --loglevel LEVEL      max. logging level\n"
+		"                            (default is (%d)\n"
+		"  -d, --no-daemonize        do not daemonize\n"
+		"  -p, --pidfile FILE        specify path for pid file\n"
+		"  -m, --mod-path PATH       specify path for modules\n"
+		"  -c, --conffile FILE       specify path for configuration file\n"
+		, app_name, max_loglevel);
 }
 
 static void pr_version(void)
@@ -173,6 +174,7 @@ static int conf_valid_loglevel(cfg_t *cfg, cfg_opt_t *opt)
 	int ret = 0;
 
 	int loglevel = cfg_opt_getnint(opt, 0);
+
 	if (loglevel < LOGLEVEL_INFO || loglevel > LOGLEVEL_DEBUG) {
 		cfg_error(cfg, "invalid loglevel %d it has to be between %d and %d\n",
 			  loglevel, LOGLEVEL_INFO, LOGLEVEL_DEBUG);
@@ -222,7 +224,7 @@ static int conf_set_args_from_conf_file(struct arguments *args)
 	cfg_set_validate_func(cfg, "loglevel", conf_valid_loglevel);
 	cfg_set_validate_func(cfg, "mqtt|passfile", conf_valid_mqtt_passfile);
 
-	switch(cfg_parse(cfg, args->conf_file)) {
+	switch (cfg_parse(cfg, args->conf_file)) {
 	case CFG_FILE_ERROR:
 		log_warn("Read configuration file %s failed (%d) %s\n" \
 			 "Configuration file will be ignored\n",
@@ -274,19 +276,19 @@ static int cmdline_handler(int argc, char *argv[])
 	args_set_default(argc, argv, &args);
 
 	struct option long_options[] = {
-		{"help", no_argument, NULL, 'h'},
-		{"version", no_argument, NULL, 'v'},
-		{"loglevel", required_argument, NULL, 0},
-		{"no-daemonize", no_argument, NULL, 'd'},
-		{"mod-path", required_argument, NULL, 'm'},
-		{"pidfile", required_argument, NULL, 'p'},
-		{"conffile", required_argument, NULL, 'c'},
-		{NULL, 0, NULL, 0},
+		{ "help", no_argument, NULL, 'h' },
+		{ "version", no_argument, NULL, 'v' },
+		{ "loglevel", required_argument, NULL, 0 },
+		{ "no-daemonize", no_argument, NULL, 'd' },
+		{ "mod-path", required_argument, NULL, 'm' },
+		{ "pidfile", required_argument, NULL, 'p' },
+		{ "conffile", required_argument, NULL, 'c' },
+		{ NULL, 0, NULL, 0 },
 	};
 
 	static const char *short_options = "hvdp:m:f:c:";
 
-	while(0 <= (c = getopt_long(argc, argv, short_options, long_options, &long_optind))) {
+	while (0 <= (c = getopt_long(argc, argv, short_options, long_options, &long_optind))) {
 		switch (c) {
 		case 0:
 			if (strcmp(long_options[long_optind].name, "loglevel") == 0) {
@@ -354,7 +356,7 @@ static int cmdline_handler(int argc, char *argv[])
 		ret = get_mqtt_pass(args.mqtt.passfile, &args.mqtt.pass);
 		if (ret < 0) {
 			log_err("couldn't get mqtt password from %s (%d) %s",
-					args.mqtt.passfile, ret, strerror(ret));
+				args.mqtt.passfile, ret, strerror(ret));
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -375,7 +377,7 @@ static int cmdline_handler(int argc, char *argv[])
 
 static void sig_handler(int signo)
 {
-	switch(signo) {
+	switch (signo) {
 	case SIGTERM:
 		mqtt_quit();
 		log_dbg("Exit gardenctl");

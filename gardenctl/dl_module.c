@@ -1,4 +1,4 @@
-/* 
+/*
  * dl_module.c
  * This file is a part of gardenctl
  *
@@ -45,11 +45,11 @@ int dlm_create(dlm_head_t *head, const char *filename)
 			create_garden_module = dlsym(dlm->dl_handler, "create_garden_module");
 			if ((dl_err = dlerror()) != NULL) {
 				log_dbg("%s ingnored no get_garden_module function found",
-						filename);
+					filename);
 				ret = 1;
 				goto err_dlclose;
 			}
-			
+
 			dlm->destroy_garden_module = dlsym(dlm->dl_handler, "destroy_garden_module");
 			if ((dl_err = dlerror()) != NULL) {
 				log_dbg("%s was ignored. No destroy_garden_module function found",
@@ -57,7 +57,7 @@ int dlm_create(dlm_head_t *head, const char *filename)
 				ret = 1;
 				goto err_dlclose;
 			}
-			
+
 			dlm->garden = create_garden_module(max_loglevel);
 			if (!dlm->garden) {
 				log_err("creation of garden module for %s failed", filename);
@@ -88,9 +88,9 @@ err:
 
 void dlm_destroy(dlm_head_t *head)
 {
-	while(head->lh_first != NULL) {
+	while (head->lh_first != NULL) {
 		dlm_t *dlm = head->lh_first;
-		
+
 		if (dlm->destroy_garden_module)
 			dlm->destroy_garden_module(dlm->garden);
 
@@ -124,7 +124,7 @@ int dlm_mod_subscribe(dlm_head_t *head)
 	dlm_t *dlm = NULL;
 
 	for (dlm = head->lh_first; dlm != NULL; dlm = dlm->dl_modules.le_next) {
-		if (dlm->garden && dlm->garden->subscribe){
+		if (dlm->garden && dlm->garden->subscribe) {
 			ret = dlm->garden->subscribe(dlm->garden);
 			if (ret)
 				break;
@@ -141,7 +141,7 @@ int dlm_mod_message(dlm_head_t *head, const struct mosquitto_message *message)
 	dlm_t *dlm = NULL;
 
 	for (dlm = head->lh_first; dlm != NULL; dlm = dlm->dl_modules.le_next) {
-		if (dlm->garden && dlm->garden->message){
+		if (dlm->garden && dlm->garden->message) {
 			ret = dlm->garden->message(dlm->garden, message);
 			if (ret)
 				break;

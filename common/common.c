@@ -1,4 +1,4 @@
-/* 
+/*
  * common.c
  * This file is a part of gardenctl
  *

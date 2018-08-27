@@ -1,4 +1,4 @@
-/* 
+/*
  * mqtt.c
  * This file is a part of gardenctl
  *
@@ -38,8 +38,7 @@ static void mqtt_on_connect(struct mosquitto *mosq, void *obj, int result)
 	struct mqtt *mqtt = (struct mqtt*)obj;
 	int err = 0;
 
-	if (result)
-	{
+	if (result) {
 		log_err("MQTT connection failed (%d) %s", result, mosquitto_strerror(result));
 		return;
 	}
@@ -61,12 +60,11 @@ static void mqtt_on_subscribe(struct mosquitto *mosq, void *obj, int mid,
 	int i;
 
 	log_dbg("MQTT subscribed (mid: %d): [0] %d", mid, granted_qos[0]);
-		for(i = 1; i < qos_count; i++){
-			log_dbg("MQTT subscribed (mid %d): [%d] %d", mid, i, granted_qos[i]);
-		}
+	for (i = 1; i < qos_count; i++)
+		log_dbg("MQTT subscribed (mid %d): [%d] %d", mid, i, granted_qos[i]);
 }
 
-static void mqtt_on_message(struct mosquitto *mosq, void *obj, 
+static void mqtt_on_message(struct mosquitto *mosq, void *obj,
 			    const struct mosquitto_message *message)
 {
 	struct mqtt *mqtt = (struct mqtt*)obj;
@@ -75,9 +73,8 @@ static void mqtt_on_message(struct mosquitto *mosq, void *obj,
 	log_dbg("MQTT [%s] message received:\n %s", message->topic, message->payload);
 
 	err = dlm_mod_message(mqtt->dlm_head, message);
-	if (err) {
+	if (err)
 		log_err("handle message failed");
-	}
 }
 
 int mqtt_run(dlm_head_t *dlm_head, struct arguments *args)
@@ -89,7 +86,7 @@ int mqtt_run(dlm_head_t *dlm_head, struct arguments *args)
 	ret = mosquitto_lib_init();
 	if (ret != MOSQ_ERR_SUCCESS)
 		goto out;
-	
+
 	mqtt.mosq = mosquitto_new("gardenctl", true, &mqtt);
 	if (mqtt.mosq == NULL) {
 		ret = errno;
@@ -112,7 +109,7 @@ int mqtt_run(dlm_head_t *dlm_head, struct arguments *args)
 	ret = mosquitto_username_pw_set(mqtt.mosq, args->mqtt.user, args->mqtt.pass);
 	if (ret != MOSQ_ERR_SUCCESS) {
 		log_err("set mosquitto username and passowrd failed (%d) %s", ret,
-				strerror(ret));
+			strerror(ret));
 		goto out_destroy;
 	}
 

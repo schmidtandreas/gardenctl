@@ -1,4 +1,4 @@
-/* 
+/*
  * mqtt.h
  * This file is a part of gardenctl
  *
