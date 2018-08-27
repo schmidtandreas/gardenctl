@@ -18,4 +18,6 @@ addons:
 script:
   - ./autogen.sh
   - ./configure
+  - make
+  - git diff
   - ./uncrustify.sh && git diff --exit-code
