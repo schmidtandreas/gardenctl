@@ -1,0 +1,21 @@
+language: c
+sudo: required
+compiler:
+  - gcc
+dist: xenial
+before_install:
+  - sudo apt update -q
+
+addons:
+  apt:
+    packages:
+      - autoconf
+      - automake
+      - libmosquitto-dev
+      - libconfuse-dev
+      - uncrustify
+
+script:
+  - ./autogen.sh
+  - ./configure
+  - ./uncrustify.sh && git diff --exit-code
