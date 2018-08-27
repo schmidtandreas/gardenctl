@@ -101,7 +101,7 @@ int mqtt_run(dlm_head_t *dlm_head, struct arguments *args)
 
 	mqtt.dlm_head = dlm_head;
 
-	ret = dlm_mod_init(dlm_head, mqtt.mosq);
+	ret = dlm_mod_init(dlm_head, args->conf_file, mqtt.mosq);
 	if (ret < 0) {
 		log_err("initiate modules failed (%d) %s", ret, strerror(ret));
 		goto out_destroy;

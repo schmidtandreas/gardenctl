@@ -37,7 +37,7 @@ typedef LIST_HEAD(dl_module_s, dl_module) dlm_head_t;
 int dlm_create(dlm_head_t *head, const char *filename);
 void dlm_destroy(dlm_head_t *head);
 
-int dlm_mod_init(dlm_head_t *head, struct mosquitto *mosq);
+int dlm_mod_init(dlm_head_t *head, const char *conf_file, struct mosquitto *mosq);
 int dlm_mod_subscribe(dlm_head_t *head);
 int dlm_mod_message(dlm_head_t *head, const struct mosquitto_message *message);
 

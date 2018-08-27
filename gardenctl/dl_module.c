@@ -101,14 +101,14 @@ void dlm_destroy(dlm_head_t *head)
 	}
 }
 
-int dlm_mod_init(dlm_head_t *head, struct mosquitto *mosq)
+int dlm_mod_init(dlm_head_t *head, const char *conf_file, struct mosquitto *mosq)
 {
 	int ret = 0;
 	dlm_t *dlm = NULL;
 
 	for (dlm = head->lh_first; dlm != NULL; dlm = dlm->dl_modules.le_next) {
 		if (dlm->garden && dlm->garden->init) {
-			ret = dlm->garden->init(dlm->garden, mosq);
+			ret = dlm->garden->init(dlm->garden, conf_file, mosq);
 			if (ret < 0)
 				break;
 		}

@@ -25,7 +25,7 @@
 #include <mosquitto.h>
 
 struct garden_module {
-	int (*init)(struct garden_module*, struct mosquitto*);
+	int (*init)(struct garden_module*, const char *conf_file, struct mosquitto*);
 	int (*subscribe)(struct garden_module*);
 	int (*message)(struct garden_module*, const struct mosquitto_message *);
 

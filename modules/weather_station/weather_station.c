@@ -176,7 +176,8 @@ static void gm_thread_stop(struct weather_station* data)
 	}
 }
 
-static int gm_init(struct garden_module *gm, struct mosquitto* mosq)
+static int gm_init(struct garden_module *gm, const char *conf_file,
+		   struct mosquitto* mosq)
 {
 	int ret = 0;
 	struct weather_station *data = NULL;
