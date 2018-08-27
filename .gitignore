@@ -25,5 +25,6 @@ build-aux/ltmain.sh
 build-aux/missing
 build
 cscope*
-m4/lt*
-m4/libtool.m4
+m4/*
+!m4/gardenctl.m4
+.uncrustify
