@@ -52,7 +52,7 @@ AC_CHECK_FUNCS([ \
 		cfg_init cfg_parse cfg_free cfg_set_validate_func cfg_getint \
 		cfg_opt_getnint cfg_getnsec cfg_getstr cfg_error cfg_parse \
 		cfg_size cfg_opt_getnstr strdup \
-])
+], [], [AC_MSG_ERROR([Function could not be invoke])])
 
 m4_include(m4/gardenctl.m4)
 
