@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([gardenctl], m4_esyscmd(build-aux/git-version-gen .tarball-version), [mail@schmidt-andreas.de])
+AC_INIT([gardenctl], m4_esyscmd(build-aux/git-version-gen .tarball-version --prefix gardenctl-), [mail@schmidt-andreas.de])
 AC_CONFIG_AUX_DIR(build-aux)
 AC_CONFIG_SRCDIR([gardenctl/gardenctl.c])
 AC_CONFIG_HEADERS([include/config.h])
