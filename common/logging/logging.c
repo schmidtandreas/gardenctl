@@ -52,7 +52,7 @@ static int log_prefix(FILE *logfile, enum loglevel level)
 	}
 
 	if (prefix)
-		fprintf(logfile, "%s", prefix);
+		ret = fprintf(logfile, "%s", prefix);
 
 	return ret;
 }
