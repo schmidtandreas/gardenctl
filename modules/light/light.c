@@ -84,7 +84,7 @@ static int gm_subscribe(struct garden_module *gm)
 
 #define IF_TOPIC_SET_GPIOEX(__topic, __gpioex, __out, __ret) \
 	if (strcmp(data->topics[TOPIC_LIGHT_ ## __topic], message->topic) == 0) { \
-		__ret = payload_on_off_to_int(message->payload, message->payloadlen); \
+		__ret = payload_on_off_to_int(message->payload); \
 		if (__ret < 0) goto __out; \
 		__ret = gpioex_set(GPIOEX_LIGHT_ ## __gpioex, __ret); \
 	}

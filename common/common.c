@@ -23,9 +23,15 @@
 #include <errno.h>
 #include <string.h>
 
-int payload_on_off_to_int(const char *payload, size_t len)
+int payload_on_off_to_int(const char *payload)
 {
+	size_t len;
 	int ret = -EINVAL;
+
+	if (!payload)
+		return ret;
+
+	len = strlen(payload);
 
 	if (len >= 2 && len <= 3) {
 		if (strcmp("on", payload) == 0)

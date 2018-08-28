@@ -500,7 +500,7 @@ static int gm_message(struct garden_module *gm, const struct mosquitto_message *
 	}
 
 	if (strcmp(data->topics[TOPIC_TAP], message->topic) == 0) {
-		ret = payload_on_off_to_int(message->payload, message->payloadlen);
+		ret = payload_on_off_to_int(message->payload);
 		if (ret < 0)
 			goto out;
 		ret = gpioex_set(GPIOEX_TAP, ret);
@@ -511,12 +511,12 @@ static int gm_message(struct garden_module *gm, const struct mosquitto_message *
 			goto out;
 		ret = gpioex_set(gpio, val);
 	} else if (strcmp(data->topics[TOPIC_DROPPIPE_PUMP], message->topic) == 0) {
-		ret = payload_on_off_to_int(message->payload, message->payloadlen);
+		ret = payload_on_off_to_int(message->payload);
 		if (ret < 0)
 			goto out;
 		ret = gpioex_set(GPIOEX_DROPPIPE_PUMP, ret);
 	} else if (strcmp(data->topics[TOPIC_BARREL], message->topic) == 0) {
-		ret = payload_on_off_to_int(message->payload, message->payloadlen);
+		ret = payload_on_off_to_int(message->payload);
 		if (ret < 0)
 			goto out;
 		ret = gpioex_set(GPIOEX_BARREL, ret);
