@@ -17,12 +17,8 @@ config.*
 configure
 libtool
 gardenctl/gardenctl
-build-aux/ar-lib
-build-aux/compile
-build-aux/depcomp
-build-aux/install-sh
-build-aux/ltmain.sh
-build-aux/missing
+build-aux/*
+!build-aux/git-version-gen
 build
 cscope*
 m4/*

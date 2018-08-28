@@ -15,6 +15,9 @@ AC_PROG_CC
 AC_PROG_CC_C99
 AM_PROG_AR
 
+# Checks for modules
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.10])
+
 # Initiate libtool
 LT_INIT([dlopen])
 
@@ -70,5 +73,6 @@ AC_CONFIG_FILES([
 	modules/weather_station/Makefile
 	gardenctl/Makefile
 	systemd/gardenctl.service
+	test/Makefile
 ])
 AC_OUTPUT
