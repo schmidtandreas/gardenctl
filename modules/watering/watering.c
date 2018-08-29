@@ -118,7 +118,7 @@ static void* gm_thread_barrel_run(void *obj)
 				curr_barrel_level >>= 1;
 			}
 
-			snprintf(buf, sizeof(buf), "%.1f%%", barrel_level_percent);
+			snprintf(buf, sizeof(buf), "%.1f", barrel_level_percent);
 
 			ret = mosquitto_publish(gm->mosq, NULL, "/garden/sensor/barrel",
 						strlen(buf), buf, 2, false);
