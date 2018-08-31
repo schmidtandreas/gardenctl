@@ -14,9 +14,10 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CC
 AC_PROG_CC_C99
 AM_PROG_AR
+AM_PROG_LIBTOOL
 
 # Checks for modules
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.10])
+PKG_CHECK_MODULES([CMOCKA], [cmocka >= 1.0.1])
 
 # Initiate libtool
 LT_INIT([dlopen])

@@ -13,7 +13,7 @@ addons:
       - automake
       - libmosquitto-dev
       - libconfuse-dev
-      - check
+      - libcmocka-dev
 
 before_script:
   - ./build-uncrustify.sh

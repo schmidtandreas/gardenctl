@@ -1,8 +1,10 @@
-TESTS = check_gardenctl
-check_PROGRAMS = check_gardenctl
+TESTS = check_garden_common
+check_PROGRAMS = check_garden_common
 
-check_gardenctl_SOURCES = check_gardenctl.c
+check_garden_common_SOURCES = mock_i2c.c mock_i2c.h check_garden_common.c
 
-check_gardenctl_CFLAGS = @CHECK_CFLAGS@ -I$(top_srcdir)/common/include
+check_garden_common_CFLAGS = @CMOCKA_CFLAGS@ -I$(top_srcdir)/common/include
 
-check_gardenctl_LDADD = @CHECK_LIBS@ $(top_builddir)/common/libgarden_common.la
+check_garden_common_LDFLAGS = -Wl,--wrap=open -Wl,--wrap=ioctl -Wl,--wrap=write -Wl,--wrap=read -Wl,--wrap=close
+
+check_garden_common_LDADD = @CMOCKA_LIBS@ $(top_builddir)/common/libgarden_common.la
