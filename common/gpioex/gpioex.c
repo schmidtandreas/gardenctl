@@ -90,7 +90,12 @@ static int gpioex_set_gpio(uint8_t bus, uint8_t addr, uint8_t value)
 
 	ret = write(fd, &value, 1);
 	if (ret < 0) {
-		log_err("write to %s failed (%d) %s", filename, ret, strerror(ret));
+		log_err("write to %s failed (%d) %s", filename, ret,
+			strerror(ret));
+		goto out_close;
+	} else if (!ret) {
+		log_err("write to %s failed (0 bytes written)", filename);
+		ret = -EIO;
 		goto out_close;
 	}
 
