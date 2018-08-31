@@ -25,3 +25,7 @@ script:
   - make check
   - git diff
   - ./uncrustify.sh && git diff --exit-code
+
+after_failure:
+  - cat test/*.log
+  - cat test/test-suite.log
