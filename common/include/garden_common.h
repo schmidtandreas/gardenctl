@@ -23,5 +23,6 @@
 #define __GARDEN_COMMON_H__
 
 int payload_on_off_to_int(const char *payload);
+int match_regex(const char *pattern, const char *string);
 
 #endif /*__GARDEN_COMMON_H__*/

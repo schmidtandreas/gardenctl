@@ -38,24 +38,7 @@
 #include "arguments.h"
 #include "dl_module.h"
 #include "mqtt.h"
-
-static int match_regex(const char *pattern, const char *string)
-{
-	int ret = 0;
-	regex_t re;
-
-	ret = regcomp(&re, pattern, REG_ICASE | REG_EXTENDED);
-	if (ret < 0)
-		return 0;
-
-	ret = regexec(&re, string, (size_t)0, NULL, 0);
-	regfree(&re);
-
-	if (ret != 0)
-		return 0;
-
-	return 1;
-}
+#include "garden_common.h"
 
 static int run(struct arguments *args)
 {

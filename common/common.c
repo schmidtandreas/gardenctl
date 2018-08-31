@@ -22,6 +22,7 @@
 #include <garden_common.h>
 #include <errno.h>
 #include <string.h>
+#include <regex.h>
 
 int payload_on_off_to_int(const char *payload)
 {
@@ -41,4 +42,22 @@ int payload_on_off_to_int(const char *payload)
 	}
 
 	return ret;
+}
+
+int match_regex(const char *pattern, const char *string)
+{
+	int ret = 0;
+	regex_t re;
+
+	ret = regcomp(&re, pattern, REG_ICASE | REG_EXTENDED);
+	if (ret < 0)
+		return 0;
+
+	ret = regexec(&re, string, (size_t)0, NULL, 0);
+	regfree(&re);
+
+	if (ret != 0)
+		return 0;
+
+	return 1;
 }
