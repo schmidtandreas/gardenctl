@@ -327,6 +327,18 @@ out:
 	return ret;
 }
 
+static int gpioex_is_valid_barrel_level(uint8_t lvl)
+{
+	if (lvl == 0xFF || lvl == 0xFE ||
+	    lvl == 0xFC || lvl == 0xF8 ||
+	    lvl == 0xF0 || lvl == 0xE0 ||
+	    lvl == 0xC0 || lvl == 0x80 ||
+	    lvl == 0x00)
+		return 1;
+	else
+		return 0;
+}
+
 int gpioex_get_barrel_level(void)
 {
 	int ret = 0;
@@ -335,8 +347,14 @@ int gpioex_get_barrel_level(void)
 	pthread_mutex_lock(&lock);
 
 	ret = gpioex_get_gpio(GPIOEX_BUS_1, GPIOEX_ADDR_BARREL_LVL, &lvl);
-	if (!ret)
-		ret = lvl;
+	if (!ret) {
+		if (gpioex_is_valid_barrel_level(lvl)) {
+			ret = lvl;
+		} else {
+			log_err("invalid barrel level value (0x%02X)", lvl);
+			ret = -EINVAL;
+		}
+	}
 
 	pthread_mutex_unlock(&lock);
 
