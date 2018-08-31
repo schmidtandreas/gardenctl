@@ -47,9 +47,12 @@ static pthread_mutex_t lock;
 #define GPIOEX_BIT_YARD_RIGHT		0x20
 #define GPIOEX_BIT_YARD_FRONT		0x40
 #define GPIOEX_BIT_YARD_BACK		0x80
+
 #define GPIOEX_BIT_YARD	(GPIOEX_BIT_YARD_LEFT | GPIOEX_BIT_YARD_RIGHT | \
 			 GPIOEX_BIT_YARD_FRONT | GPIOEX_BIT_YARD_BACK)
-#define GPIOEX_BIT_PUMP_VALVES	(GPIOEX_BIT_YARD | GPIOEX_BIT_TAP | GPIOEX_BIT_BARREL)
+
+#define GPIOEX_BIT_PUMP_VALVES	(GPIOEX_BIT_YARD | GPIOEX_BIT_TAP | \
+				 GPIOEX_BIT_BARREL)
 
 /* 230V relays */
 #define GPIOEX_BIT_PUMP			0x80
@@ -80,7 +83,8 @@ static int gpioex_set_gpio(uint8_t bus, uint8_t addr, uint8_t value)
 
 	ret = ioctl(fd, I2C_SLAVE, addr);
 	if (ret < 0) {
-		log_err("set address to %s failed (%d) %s", filename, ret, strerror(ret));
+		log_err("set address to %s failed (%d) %s", filename, ret,
+			strerror(ret));
 		goto out_close;
 	}
 
@@ -124,7 +128,8 @@ static int gpioex_get_gpio(uint8_t bus, uint8_t addr, uint8_t *value)
 
 	ret = ioctl(fd, I2C_SLAVE, addr);
 	if (ret < 0) {
-		log_err("set address to %s failed (%d) %s", filename, ret, strerror(ret));
+		log_err("set address to %s failed (%d) %s", filename, ret,
+			strerror(ret));
 		goto out_close;
 	}
 
@@ -205,13 +210,15 @@ static int gpioex_set_valves_and_pump(uint8_t valves_value)
 
 		log_dbg("pump disabled");
 
-		ret = gpioex_set_gpio(GPIOEX_BUS_1, GPIOEX_ADDR_24V, valves_value);
+		ret = gpioex_set_gpio(GPIOEX_BUS_1, GPIOEX_ADDR_24V,
+				      valves_value);
 		if (ret)
 			goto out;
 	} else {
 		uint8_t val230v;
 
-		ret = gpioex_set_gpio(GPIOEX_BUS_1, GPIOEX_ADDR_24V, valves_value);
+		ret = gpioex_set_gpio(GPIOEX_BUS_1, GPIOEX_ADDR_24V,
+				      valves_value);
 		if (ret)
 			goto out;
 
