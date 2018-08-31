@@ -139,8 +139,13 @@ static int gpioex_get_gpio(uint8_t bus, uint8_t addr, uint8_t *value)
 	}
 
 	ret = read(fd, value, 1);
-	if (ret != 1) {
-		log_err("read from %s failed (%d) %s", filename, ret, strerror(ret));
+	if (ret < 0) {
+		log_err("read from %s failed (%d) %s", filename, ret,
+			strerror(ret));
+		goto out_close;
+	} else if (!ret) {
+		log_err("read from %s failed (0 bytes read)", filename);
+		ret = -EIO;
 		goto out_close;
 	}
 
