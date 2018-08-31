@@ -191,10 +191,7 @@ int gpioex_init(void)
 	}
 
 	ret = gpioex_disable_all();
-	if (ret)
-		goto out;
 
-	return 0;
 out:
 	return ret;
 }
