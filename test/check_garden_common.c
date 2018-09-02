@@ -97,18 +97,48 @@ static void test_gpioex_init(void **state)
 	assert_int_equal(gpioex_init(), -ENOSPC);
 }
 
+#define GPIOEX_VAL(_name, _sv, _rv) { \
+		start_ ## _name = (uint8_t)(_sv); \
+		result_ ## _name = (uint8_t)(_rv); \
+} while (0)
+
 void test_gpioex_set(void **state)
 {
-	uint8_t valves_value = 0xFF;
-	uint8_t result_valves_val = 0xF7;
-	uint8_t val230v = 0xFF;
-	uint8_t result_230v_val = 0x7F;
+	int i, j;
+	uint8_t start_24v;
+	uint8_t result_24v;
+	uint8_t start_230v;
+	uint8_t result_230v;
 
-	mock_i2c_prepare_read(3, 0, &valves_value, 1);
-	mock_i2c_prepare_write(3, 0, &result_valves_val, 1, 1);
-	mock_i2c_prepare_read(3, 0, &val230v, 1);
-	mock_i2c_prepare_write(3, 0, &result_230v_val, 1, 1);
-	assert_null(gpioex_set(GPIOEX_TAP, 1));
+	/* Check tap on/off */
+	for (i = 0; i < 256; ++i) {
+		for (j = 0; j < 256; ++j) {
+			GPIOEX_VAL(24v, i, i & 0xF7);
+			GPIOEX_VAL(230v, j, j & 0x7F);
+
+			mock_i2c_prepare_read(3, 0, &start_24v, 1);
+			mock_i2c_prepare_write(3, 0, &result_24v, 1, 1);
+			mock_i2c_prepare_read(3, 0, &start_230v, 1);
+			mock_i2c_prepare_write(3, 0, &result_230v, 1, 1);
+			assert_null(gpioex_set(GPIOEX_TAP, 1));
+
+			GPIOEX_VAL(24v, i, i | 0x08);
+			mock_i2c_prepare_read(3, 0, &start_24v, 1);
+			if (((i | 0x08) & 0xFC) == 0xFC) {
+				GPIOEX_VAL(230v, j, j | 0x80);
+				mock_i2c_prepare_read(3, 0, &start_230v, 1);
+				mock_i2c_prepare_write(3, 0, &result_230v, 1, 1);
+				mock_i2c_prepare_write(3, 0, &result_24v, 1, 1);
+			} else {
+				GPIOEX_VAL(230v, j, j & 0x7F);
+				mock_i2c_prepare_write(3, 0, &result_24v, 1, 1);
+				mock_i2c_prepare_read(3, 0, &start_230v, 1);
+				mock_i2c_prepare_write(3, 0, &result_230v, 1, 1);
+			}
+
+			assert_null(gpioex_set(GPIOEX_TAP, 0));
+		}
+	}
 }
 
 static int is_valid_barrel_lvl(uint8_t val)
