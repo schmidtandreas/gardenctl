@@ -200,8 +200,6 @@ static int gpioex_set_valves_and_pump(uint8_t valves_value)
 {
 	int ret = 0;
 
-	log_dbg("set valves %02X", valves_value);
-
 	if ((valves_value & GPIOEX_BIT_PUMP_VALVES) == GPIOEX_BIT_PUMP_VALVES) {
 		uint8_t val230v;
 
