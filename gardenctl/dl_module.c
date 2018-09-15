@@ -30,52 +30,63 @@
 int dlm_create(dlm_head_t *head, const char *filename)
 {
 	int ret = 0;
-	dlm_t *dlm = malloc(sizeof(dlm_t));
+	const char *dl_err = NULL;
+	struct garden_module* (*create_garden_module)(enum loglevel);
+	dlm_t *dlm = calloc(1, sizeof(dlm_t));
 
-	if (dlm) {
-		const char *dl_err = NULL;
-
-		memset(dlm, 0, sizeof(dlm_t));
-		dlerror();
-		dlm->dl_handler = dlopen(filename, RTLD_NOW);
-
-		if ((dl_err = dlerror()) == NULL) {
-			struct garden_module* (*create_garden_module)(enum loglevel);
-
-			create_garden_module = dlsym(dlm->dl_handler, "create_garden_module");
-			if ((dl_err = dlerror()) != NULL) {
-				log_dbg("%s ingnored no get_garden_module function found",
-					filename);
-				ret = 1;
-				goto err_dlclose;
-			}
-
-			dlm->destroy_garden_module = dlsym(dlm->dl_handler, "destroy_garden_module");
-			if ((dl_err = dlerror()) != NULL) {
-				log_dbg("%s was ignored. No destroy_garden_module function found",
-					filename);
-				ret = 1;
-				goto err_dlclose;
-			}
-
-			dlm->garden = create_garden_module(max_loglevel);
-			if (!dlm->garden) {
-				log_err("creation of garden module for %s failed", filename);
-				ret = -ENOMEM;
-			}
-
-			LIST_INSERT_HEAD(head, dlm, dl_modules);
-
-		} else {
-			log_err("dlopen for %s failed %s", filename, dl_err);
-			ret = -EINVAL;
-			goto err_free_dlm;
-		}
-	} else {
+	if (!dlm) {
 		log_err("Allocate memory for dlm failed");
 		ret = -ENOMEM;
 		goto err;
 	}
+
+	if (!filename || !*filename) {
+		log_err("Invalid module filename");
+		ret = -EINVAL;
+		goto err_free_dlm;
+	}
+
+	if (!head) {
+		log_err("Invalid module list");
+		ret = -EINVAL;
+		goto err_free_dlm;
+	}
+
+	dlerror();
+	dlm->dl_handler = dlopen(filename, RTLD_NOW);
+	dl_err = dlerror();
+	if (dl_err) {
+		log_err("dlopen for %s failed %s", filename, dl_err);
+		ret = -EINVAL;
+		goto err_free_dlm;
+	}
+
+	create_garden_module = dlsym(dlm->dl_handler, "create_garden_module");
+	dl_err = dlerror();
+	if (dl_err) {
+		log_dbg("%s ignored. No get_garden_module function found",
+			filename);
+		ret = 1;
+		goto err_dlclose;
+	}
+
+	dlm->destroy_garden_module = dlsym(dlm->dl_handler,
+					   "destroy_garden_module");
+	dl_err = dlerror();
+	if (dl_err) {
+		log_dbg("%s ignored. No destroy_garden_module function found",
+			filename);
+		ret = 1;
+		goto err_dlclose;
+	}
+
+	dlm->garden = create_garden_module(max_loglevel);
+	if (!dlm->garden) {
+		log_err("creation of garden module for %s failed", filename);
+		ret = -ENOMEM;
+	}
+
+	LIST_INSERT_HEAD(head, dlm, dl_modules);
 
 	return 0;
 err_dlclose:
@@ -101,7 +112,8 @@ void dlm_destroy(dlm_head_t *head)
 	}
 }
 
-int dlm_mod_init(dlm_head_t *head, const char *conf_file, struct mosquitto *mosq)
+int dlm_mod_init(dlm_head_t *head, const char *conf_file,
+		 struct mosquitto *mosq)
 {
 	int ret = 0;
 	dlm_t *dlm = NULL;
