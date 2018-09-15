@@ -84,6 +84,7 @@ int dlm_create(dlm_head_t *head, const char *filename)
 	if (!dlm->garden) {
 		log_err("creation of garden module for %s failed", filename);
 		ret = -ENOMEM;
+		goto err_dlclose;
 	}
 
 	LIST_INSERT_HEAD(head, dlm, dl_modules);
